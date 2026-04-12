@@ -10,21 +10,15 @@
     <style>
         :root { --t-red: #ff0000; --t-green: #00ff00; }
         body { margin: 0; background: #000; color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; font-weight: bold; }
-        
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #100; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        
         .hud-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.1); pointer-events: none; z-index: 2; border: 2px solid rgba(255,0,0,0.3); box-sizing: border-box; }
-
         .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(20,0,0,0.8); padding: 10px; border-left: 3px solid var(--t-red); }
         .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; }
-
         .dist-panel { position: absolute; bottom: 200px; width: 100%; text-align: center; z-index: 10; font-size: 24px; color: var(--t-green); }
-
         .controls { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; z-index: 10; padding: 0 20px; box-sizing: border-box; }
-        .btn { background: rgba(15,0,0,0.9); border: 2px solid var(--t-red); color: var(--t-red); padding: 15px; cursor: pointer; font-family: inherit; font-size: 14px; width: 100%; }
-        .btn:active { background: var(--t-red); color: #000; }
+        .btn { background: rgba(15,0,0,0.9); border: 2px solid var(--t-red); color: var(--t-red); padding: 15px; cursor: pointer; font-family: inherit; font-size: 14px; width: 100%; text-transform: uppercase; }
         .btn-gps { border-color: var(--t-green); color: var(--t-green); }
     </style>
 </head>
@@ -34,27 +28,22 @@
         <canvas id="c"></canvas>
         <div class="hud-overlay"></div>
     </div>
-
     <div class="header">
         <div id="status">SYS: STANDBY</div>
-        <div id="logs" class="logs">> НАЖМІТЬ INITIALIZE</div>
+        <div id="logs" class="logs">> INITIALIZATION REQUIRED</div>
     </div>
-
-    <div class="dist-panel">
-        RANGE: <span id="dist-val">OFFLINE</span>
-    </div>
-
+    <div class="dist-panel">RANGE: <span id="dist-val">OFFLINE</span></div>
     <div class="controls">
-        <button id="btn-init" class="btn" onclick="startVision()">1. INITIALIZE VISION</button>
-        <button id="btn-geo" class="btn btn-gps" onclick="startGps()" style="display:none;">2. ACTIVATE GPS</button>
+        <button id="btn-init" class="btn" onclick="startVision()">Initialize Terminator OS</button>
+        <button id="btn-geo" class="btn btn-gps" onclick="startGps()" style="display:none;">Activate Tactical GPS</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-
+        tg.ready(); tg.expand();
         let model = null;
+        let lastDetectionTime = 0;
+        const detectionInterval = 300; // Аналіз 3 рази на секунду для швидкості
         const video = document.getElementById('v');
         const canvas = document.getElementById('c');
         const ctx = canvas.getContext('2d');
@@ -62,54 +51,46 @@
         async function startVision() {
             document.getElementById('status').innerText = 'LOADING AI...';
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" }, audio: false 
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
                 video.srcObject = stream;
-                video.onloadedmetadata = () => {
-                    video.play();
-                    document.getElementById('btn-init').style.display = 'none';
-                    document.getElementById('btn-geo').style.display = 'block';
-                };
-
+                video.onloadedmetadata = () => { video.play(); };
                 model = await cocoSsd.load();
                 document.getElementById('status').innerText = 'AI: ACTIVE';
                 document.getElementById('logs').innerText = '> SCANNING SECTOR...';
+                document.getElementById('btn-init').style.display = 'none';
+                document.getElementById('btn-geo').style.display = 'block';
                 detectFrame();
-            } catch (err) {
-                alert("Помилка камери: " + err.message);
-            }
+            } catch (err) { alert("Access denied: " + err.message); }
         }
 
         function startGps() {
-            document.getElementById('logs').innerText = '> REQUESTING GPS AUTH...';
             navigator.geolocation.getCurrentPosition((pos) => {
-                document.getElementById('logs').innerText = '> GPS CONNECTED';
+                document.getElementById('logs').innerText = '> GPS LOCKED';
                 tg.HapticFeedback.impactOccurred('medium');
-                
                 navigator.geolocation.watchPosition((p) => {
                     const kyiv = {lat: 50.45, lon: 30.52};
                     const d = Math.sqrt(Math.pow(p.coords.latitude - kyiv.lat, 2) + Math.pow(p.coords.longitude - kyiv.lon, 2)) * 111320;
                     document.getElementById('dist-val').innerText = Math.round(d) + " M";
                 });
-            }, (err) => {
-                alert("Потрібно дозволити геолокацію в налаштуваннях браузера!");
-            }, { enableHighAccuracy: true });
+            }, (err) => { alert("Enable GPS in settings!"); }, { enableHighAccuracy: true });
         }
 
         async function detectFrame() {
             if (!model) return;
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const predictions = await model.detect(video);
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            predictions.forEach(p => {
-                ctx.strokeStyle = '#f00';
-                ctx.lineWidth = 3;
-                ctx.strokeRect(p.bbox[0], p.bbox[1], p.bbox[2], p.bbox[3]);
-                ctx.fillStyle = '#f00';
-                ctx.fillText(p.class.toUpperCase(), p.bbox[0], p.bbox[1] - 5);
-            });
+            const now = Date.now();
+            if (now - lastDetectionTime > detectionInterval) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const predictions = await model.detect(video, { maxNumBoxes: 3, minConfidence: 0.4 });
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                predictions.forEach(p => {
+                    ctx.strokeStyle = '#f00'; ctx.lineWidth = 4;
+                    ctx.strokeRect(p.bbox[0], p.bbox[1], p.bbox[2], p.bbox[3]);
+                    ctx.fillStyle = '#f00'; ctx.font = 'bold 18px Courier New';
+                    ctx.fillText('TARGET: ' + p.class.toUpperCase(), p.bbox[0], p.bbox[1] - 5);
+                });
+                lastDetectionTime = now;
+            }
             requestAnimationFrame(detectFrame);
         }
     </script>
