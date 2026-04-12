@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
@@ -7,131 +7,89 @@
     <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        /* ЧЕРВОНИЙ T-800 HUD */
-        :root { --main-color: #ff0000; --text-green: #00ff00; --bg-dark: #000000; }
-        body { margin: 0; background: var(--bg-dark); color: var(--main-color); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; font-weight: bold; }
+        :root { --t-red: #ff0000; --t-green: #00ff00; --bg: #000; }
+        body { margin: 0; background: var(--bg); color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
         
-        /* Червона тактична мапа - Sepia(100%), Hue-rotate(0) */
-        #map { width: 100%; height: 100vh; filter: brightness(0.9) contrast(1.3) sepia(100%) hue-rotate(0deg) saturate(3); transition: opacity 2s ease; opacity: 0; }
-        
-        /* Радар поверх мапи - червоний */
-        .radar-overlay {
-            position: absolute; top: 50%; left: 50%; width: 150vmax; height: 150vmax;
-            transform: translate(-50%, -50%);
-            background: repeating-radial-gradient(circle, rgba(255,0,0,0.05) 0%, rgba(255,0,0,0.05) 8%, transparent 8.1%, transparent 16%);
-            pointer-events: none; z-index: 1000;
+        /* ПОКРАЩЕНА ВИДИМІСТЬ МАПИ */
+        #map { 
+            width: 100%; height: 100vh; 
+            filter: brightness(1.2) contrast(1.5) sepia(100%) hue-rotate(-10deg) saturate(5); 
+            opacity: 0; transition: opacity 1s;
         }
         
-        /* Промінь сканера - червоний */
-        .radar-sweep {
-            position: absolute; top: 50%; left: 50%; width: 100vmax; height: 100vmax;
-            background: conic-gradient(from 0deg, rgba(255,0,0,0.2) 0deg, transparent 60deg);
-            transform: translate(-50%, -50%);
-            animation: rotate 6s linear infinite;
-            z-index: 1001; pointer-events: none;
+        /* ЧЕРВОНА РАМКА СКАНЕРА */
+        .hud-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border: 20px solid rgba(255, 0, 0, 0.1); box-sizing: border-box;
+            pointer-events: none; z-index: 2000;
         }
 
-        @keyframes rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
+        .header { position: absolute; top: 20px; left: 20px; z-index: 2005; background: rgba(0,0,0,0.7); padding: 10px; border-left: 3px solid var(--t-red); }
+        
+        /* СИСТЕМНІ ЛОГИ (як на референсах) */
+        .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; line-height: 1.2; }
 
-        .header { position: absolute; top: 15px; left: 15px; z-index: 1005; background: rgba(10,0,0,0.9); padding: 12px; border-left: 4px solid var(--main-color); font-size: 13px; }
-        .coords { font-size: 10px; margin-top: 5px; color: rgba(255,0,0,0.8); }
-
-        /* Табло ВІДСТАНЬ - як на референсах (зелене) */
-        .distance-display {
-            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
-            z-index: 1005; background: rgba(0,20,0,0.8); border: 2px solid var(--text-green);
-            color: var(--text-green); padding: 15px 30px; font-size: 18px; letter-spacing: 2px;
-            box-shadow: 0 0 15px rgba(0,255,0,0.3); text-align: center;
+        /* ВІДСТАНЬ - ЯСКРАВО ЗЕЛЕНА */
+        .dist-container {
+            position: absolute; bottom: 120px; width: 100%; text-align: center;
+            z-index: 2005; font-size: 24px; font-weight: bold;
+            color: var(--t-green); text-shadow: 0 0 10px rgba(0,255,0,0.8);
         }
 
         .btn-scan { 
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); 
-            z-index: 1005; background: rgba(10,0,0,0.9); border: 2px solid var(--main-color); 
-            color: var(--main-color); padding: 15px 35px; cursor: pointer; 
-            text-transform: uppercase; font-weight: bold; letter-spacing: 2px;
-            box-shadow: 0 0 15px rgba(255,0,0,0.3); transition: all 0.3s ease;
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); 
+            z-index: 2005; background: none; border: 2px solid var(--t-red); 
+            color: var(--t-red); padding: 15px 30px; cursor: pointer; font-weight: bold;
+            box-shadow: 0 0 10px rgba(255,0,0,0.5);
         }
-        .btn-scan:active { background: var(--main-color); color: var(--bg-dark); }
-
-        .leaflet-marker-icon { animation: pulse 1.5s infinite; }
-        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.2; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
-    <div class="radar-overlay"></div>
-    <div class="radar-sweep"></div>
-    
+    <div class="hud-overlay"></div>
     <div class="header">
-        <div id="agent-status">T-800 SYSTEM: READY</div>
-        <div class="coords" id="pos">TARGET LOCATION: UNKNOWN</div>
+        <div id="status">T-800: STANDBY</div>
+        <div class="logs" id="logs">
+            > ANALYZING SECTOR...<br>
+            > OPTICS CALIBRATED<br>
+            > SEARCHING FOR TARGET
+        </div>
     </div>
 
     <div id="map"></div>
 
-    <div class="distance-display" id="distance-box">
-        DISTANCE: <span id="distance-val">PENDING SCAN</span> M
+    <div class="dist-container">
+        ВІДСТАНЬ: <span id="dist-val">00000</span> М
     </div>
 
-    <button class="btn-scan" onclick="findMe()">SCAN LOCAL SECTOR</button>
+    <button class="btn-scan" onclick="startScan()">ІНІЦІАЛІЗАЦІЯ СКАНЕРА</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
-        tg.expand();
-
-        // Ціль - Майдан Незалежності, Київ (як приклад)
-        const targetCoords = [50.4501, 30.5234];
 
         const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([50.45, 30.52], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
 
-        let marker = L.circleMarker([50.45, 30.52], { 
-            color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.8, radius: 11 
-        }).addTo(map);
-
-        // Ціль на мапі
-        L.circleMarker(targetCoords, { color: '#ffcc00', radius: 15, weight: 5, fillOpacity: 0 }).addTo(map);
-
-        // Функція розрахунку відстані (гаверсинус)
-        function getDistance(coords1, coords2) {
-            const R = 6371e3; // радіус Землі в метрах
-            const dLat = (coords2[0] - coords1[0]) * Math.PI / 180;
-            const dLon = (coords2[1] - coords1[1]) * Math.PI / 180;
-            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                      Math.cos(coords1[0] * Math.PI / 180) * Math.cos(coords2[0] * Math.PI / 180) *
-                      Math.sin(dLon/2) * Math.sin(dLon/2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-            return R * c; // в метрах
-        }
-
-        function findMe() {
-            tg.HapticFeedback.impactOccurred('heavy');
-            document.getElementById('agent-status').innerText = 'SCANNING...';
-            document.getElementById('map').style.opacity = '1'; 
+        function startScan() {
+            tg.HapticFeedback.impactOccurred('medium');
+            document.getElementById('map').style.opacity = '1';
             
-            navigator.geolocation.getCurrentPosition((position) => {
-                const lat = position.coords.latitude;
-                const lon = position.coords.longitude;
-                const myCoords = [lat, lon];
-                
-                document.getElementById('pos').innerText = `T-OS LAT: ${lat.toFixed(4)} | LON: ${lon.toFixed(4)}`;
-                document.getElementById('agent-status').innerText = 'TARGET LOCKED';
-                
-                map.flyTo([lat, lon], 16, { duration: 2.5 });
-                marker.setLatLng([lat, lon]);
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const myLat = pos.coords.latitude;
+                const myLon = pos.coords.longitude;
+                const target = [50.4501, 30.5234]; // Київ, Майдан
 
-                // Рахуємо реальну відстань
-                const dist = getDistance(myCoords, targetCoords);
-                document.getElementById('distance-val').innerText = Math.round(dist);
-                
-                tg.HapticFeedback.notificationOccurred('success');
-            }, (err) => {
-                document.getElementById('agent-status').innerText = 'ERROR: GPS LINK FAILED';
+                map.flyTo([myLat, myLon], 15);
+                L.circleMarker([myLat, myLon], { color: '#f00', radius: 10 }).addTo(map);
+
+                // Розрахунок відстані
+                const d = map.distance([myLat, myLon], target);
+                document.getElementById('dist-val').innerText = Math.round(d);
+                document.getElementById('status').innerText = 'TARGET LOCKED';
+                document.getElementById('logs').innerHTML = '> COORDS ACQUIRED<br>> DISTANCE CALCULATED<br>> READY TO ENGAGE';
             });
         }
-        
-        const user = tg.initDataUnsafe?.user;
-        if (user) document.getElementById('agent-status').innerText = 'AGENT: ' + user.first_name.toUpperCase();
     </script>
 </body>
 </html>
+ 
