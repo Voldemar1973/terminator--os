@@ -6,127 +6,132 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --t-red: #ff0000; --t-green: #00ff00; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { margin: 0; background: #000; color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
         
-        /* ВІДЕО НА ВЕСЬ ЕКРАН */
-        video {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; z-index: 1; background: transparent;
-        }
+        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         
-        /* ШАР HUD */
-        #hud {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            z-index: 2; pointer-events: none;
-            background: rgba(255, 0, 0, 0.2); /* Тільки легкий відтінок */
+        .hud-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.2);
+            pointer-events: none; z-index: 2;
+            border: 2px solid rgba(255, 0, 0, 0.3);
+            box-sizing: border-box;
         }
 
-        .scanline {
-            position: absolute; width: 100%; height: 4px;
-            background: rgba(255, 0, 0, 0.4); top: 0;
-            animation: move 4s linear infinite;
-        }
-        @keyframes move { from { top: 0; } to { top: 100%; } }
-
-        /* ІНТЕРФЕЙС */
-        .ui { position: relative; z-index: 10; height: 100vh; display: flex; flex-direction: column; justify-content: space-between; padding: 20px; }
-        
-        .header { background: rgba(0,0,0,0.7); padding: 10px; border-left: 3px solid var(--t-red); }
+        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.7); padding: 10px; border-left: 3px solid var(--t-red); }
         .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; }
 
-        .distance { font-size: 28px; color: var(--t-green); text-align: center; text-shadow: 0 0 10px #00ff00; margin-bottom: 20px; }
+        .dist-container {
+            position: absolute; bottom: 150px; width: 100%; text-align: center;
+            z-index: 10; font-size: 24px; color: var(--t-green); text-shadow: 0 0 10px #00ff00;
+        }
 
-        .btns { display: flex; gap: 10px; margin-bottom: 30px; }
-        .btn { background: rgba(0,0,0,0.8); border: 2px solid var(--t-red); color: var(--t-red); padding: 18px; flex: 1; font-weight: bold; cursor: pointer; }
-        .btn-snap { border-color: var(--t-green); color: var(--t-green); flex: 0.4; font-size: 20px; }
-        
-        canvas { display: none; }
+        .controls {
+            position: absolute; bottom: 40px; width: 100%; display: flex;
+            justify-content: center; gap: 15px; z-index: 10; padding: 0 20px; box-sizing: border-box;
+        }
+
+        .btn {
+            background: rgba(0,0,0,0.8); border: 2px solid var(--t-red);
+            color: var(--t-red); padding: 15px; cursor: pointer; font-weight: bold;
+        }
+        .btn-snap { border-color: var(--t-green); color: var(--t-green); flex: 1; }
+        .btn-main { flex: 2; }
+
+        #snap-canvas { display: none; }
     </style>
 </head>
 <body>
-    <video id="v" autoplay playsinline muted></video>
-    <div id="hud"><div class="scanline"></div></div>
-
-    <div class="ui">
-        <div class="header">
-            <div id="st">T-800: STANDBY</div>
-            <div class="logs" id="l">> WAITING FOR ACTIVATION...</div>
-        </div>
-
-        <div>
-            <div class="distance">DIST: <span id="dv">00000</span> M</div>
-            <div class="btns">
-                <button class="btn btn-snap" onclick="snap()">📷</button>
-                <button class="btn" onclick="start()">ACTIVATE VISION</button>
-            </div>
-        </div>
+    <div id="video-container">
+        <video id="v" autoplay playsinline muted></video>
+        <div class="hud-overlay"></div>
     </div>
 
-    <canvas id="c"></canvas>
+    <div class="header">
+        <div id="status">T-800: STANDBY</div>
+        <div class="logs" id="logs">> СИСТЕМА ГОТОВА</div>
+    </div>
+
+    <div class="dist-container">
+        DIST: <span id="dist-val">00000</span> M
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-snap" onclick="takeSnapshot()">📷 SNAP</button>
+        <button class="btn btn-main" id="startBtn" onclick="initCamera()">INITIALIZE VISION</button>
+    </div>
+
+    <canvas id="snap-canvas"></canvas>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
+        tg.ready();
+        tg.expand();
 
-        async function start() {
+        let currentDist = "00000";
+
+        async function initCamera() {
             const v = document.getElementById('v');
-            const l = document.getElementById('l');
-            const st = document.getElementById('st');
-
+            const logs = document.getElementById('logs');
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment", focusMode: "continuous" }, 
+                    video: { facingMode: "environment" }, 
                     audio: false 
                 });
                 v.srcObject = stream;
-                await v.play(); // Примусовий старт
-                
-                st.innerText = 'SYSTEM: LIVE';
-                l.innerHTML = '> TARGET ACQUIRED<br>> SENSORS ONLINE';
-                tg.HapticFeedback.impactOccurred('medium');
-            } catch (e) {
-                l.innerText = '> ERROR: ' + e.name;
-                alert('Дозвольте доступ до камери!');
+                v.play();
+                document.getElementById('status').innerText = 'SYSTEM: LIVE';
+                logs.innerHTML = '> ОПТИКА АКТИВОВАНА<br>> СКАНУВАННЯ...';
+                tg.HapticFeedback.impactOccurred('heavy');
+                updateDist();
+            } catch (err) {
+                logs.innerText = '> ПОМИЛКА: ' + err.name;
+                alert('Будь ласка, надайте доступ до камери!');
             }
+        }
 
-            // Геолокація (Київ)
-            navigator.geolocation.getCurrentPosition((p) => {
-                const d = Math.round(Math.sqrt(Math.pow(p.coords.latitude - 50.45, 2) + Math.pow(p.coords.longitude - 30.52, 2)) * 111320);
-                document.getElementById('dv').innerText = d;
+        function updateDist() {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const target = {lat: 50.45, lon: 30.52};
+                const d = Math.sqrt(Math.pow(pos.coords.latitude - target.lat, 2) + Math.pow(pos.coords.longitude - target.lon, 2)) * 111320;
+                currentDist = Math.round(d).toString();
+                document.getElementById('dist-val').innerText = currentDist;
             });
         }
 
-        function snap() {
+        function takeSnapshot() {
             const v = document.getElementById('v');
-            const c = document.getElementById('c');
-            const ctx = c.getContext('2d');
-            
-            if (v.readyState !== 4) return alert('Камера не готова!');
+            const canvas = document.getElementById('snap-canvas');
+            const ctx = canvas.getContext('2d');
 
-            c.width = v.videoWidth;
-            c.height = v.videoHeight;
-            
-            // 1. Фото
-            ctx.drawImage(v, 0, 0);
-            
+            canvas.width = v.videoWidth;
+            canvas.height = v.videoHeight;
+
+            // 1. Малюємо кадр
+            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+
             // 2. Червоний фільтр
-            ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
-            ctx.fillRect(0, 0, c.width, c.height);
-            
-            // 3. Водяний знак
-            ctx.fillStyle = "#00ff00";
-            ctx.font = "bold 40px Courier New";
-            ctx.fillText("DIST: " + document.getElementById('dv').innerText + " M", 50, 100);
-            ctx.fillStyle = "rgba(255,255,255,0.7)";
-            ctx.fillText("@TerminatorOS_Bot", c.width - 450, c.height - 50);
+            ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            const img = c.toDataURL("image/png");
-            const a = document.createElement('a');
-            a.href = img;
-            a.download = 'terminator_vision.png';
-            a.click();
+            // 3. Водяний знак (Реклама бота)
+            ctx.fillStyle = "white";
+            ctx.font = "bold 30px Arial";
+            ctx.fillText("@TerminatorOS_Bot", 30, canvas.height - 40);
+
+            // 4. Дані HUD
+            ctx.fillStyle = "#00ff00";
+            ctx.fillText("DIST: " + currentDist + " M", 30, 60);
+            
+            // Зберігання
+            const link = document.createElement('a');
+            link.download = 'terminator_snap.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            
             tg.HapticFeedback.notificationOccurred('success');
+            document.getElementById('status').innerText = 'PHOTO SAVED';
         }
     </script>
 </body>
