@@ -1,95 +1,90 @@
-   <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root { --t-red: #ff0000; --t-green: #00ff00; --bg: #000; }
-        body { margin: 0; background: var(--bg); color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
+        :root { --t-red: #ff0000; --t-green: #00ff00; }
+        body { margin: 0; background: #000; color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
         
-        /* ПОКРАЩЕНА ВИДИМІСТЬ МАПИ */
-        #map { 
-            width: 100%; height: 100vh; 
-            filter: brightness(1.2) contrast(1.5) sepia(100%) hue-rotate(-10deg) saturate(5); 
-            opacity: 0; transition: opacity 1s;
-        }
+        /* КОНТЕЙНЕР ДЛЯ ВІДЕО */
+        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        video { width: 100%; height: 100%; object-fit: cover; }
         
-        /* ЧЕРВОНА РАМКА СКАНЕРА */
-        .hud-overlay {
+        /* ЧЕРВОНИЙ ФІЛЬТР HUD */
+        .hud-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            border: 20px solid rgba(255, 0, 0, 0.1); box-sizing: border-box;
-            pointer-events: none; z-index: 2000;
+            background: rgba(255, 0, 0, 0.25); /* Напівпрозорий червоний */
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+            pointer-events: none; z-index: 2;
         }
 
-        .header { position: absolute; top: 20px; left: 20px; z-index: 2005; background: rgba(0,0,0,0.7); padding: 10px; border-left: 3px solid var(--t-red); }
-        
-        /* СИСТЕМНІ ЛОГИ (як на референсах) */
-        .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; line-height: 1.2; }
+        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.6); padding: 10px; border-left: 3px solid var(--t-red); }
+        .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; }
 
-        /* ВІДСТАНЬ - ЯСКРАВО ЗЕЛЕНА */
         .dist-container {
             position: absolute; bottom: 120px; width: 100%; text-align: center;
-            z-index: 2005; font-size: 24px; font-weight: bold;
-            color: var(--t-green); text-shadow: 0 0 10px rgba(0,255,0,0.8);
+            z-index: 10; font-size: 26px; font-weight: bold;
+            color: var(--t-green); text-shadow: 0 0 10px #00ff00;
         }
 
         .btn-scan { 
             position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); 
-            z-index: 2005; background: none; border: 2px solid var(--t-red); 
+            z-index: 10; background: rgba(0,0,0,0.8); border: 2px solid var(--t-red); 
             color: var(--t-red); padding: 15px 30px; cursor: pointer; font-weight: bold;
-            box-shadow: 0 0 10px rgba(255,0,0,0.5);
         }
     </style>
 </head>
 <body>
-    <div class="hud-overlay"></div>
-    <div class="header">
-        <div id="status">T-800: STANDBY</div>
-        <div class="logs" id="logs">
-            > ANALYZING SECTOR...<br>
-            > OPTICS CALIBRATED<br>
-            > SEARCHING FOR TARGET
-        </div>
+    <div id="video-container">
+        <video id="v" autoplay playsinline></video>
+        <div class="hud-layer"></div>
     </div>
 
-    <div id="map"></div>
+    <div class="header">
+        <div id="status">T-800: СИСТЕМА ГОТОВА</div>
+        <div class="logs" id="logs">> ОЧІКУВАННЯ ІНІЦІАЛІЗАЦІЇ...</div>
+    </div>
 
     <div class="dist-container">
         ВІДСТАНЬ: <span id="dist-val">00000</span> М
     </div>
 
-    <button class="btn-scan" onclick="startScan()">ІНІЦІАЛІЗАЦІЯ СКАНЕРА</button>
+    <button class="btn-scan" onclick="initTerminator()">УВІМКНУТИ КІБЕР-ЗІР</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
 
-        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([50.45, 30.52], 13);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png').addTo(map);
-
-        function startScan() {
-            tg.HapticFeedback.impactOccurred('medium');
-            document.getElementById('map').style.opacity = '1';
+        async function initTerminator() {
+            document.getElementById('status').innerText = 'ЗАПУСК...';
             
+            // Запуск камери
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" }, 
+                    audio: false 
+                });
+                document.getElementById('v').srcObject = stream;
+                document.getElementById('logs').innerHTML = '> КАМЕРА АКТИВОВАНА<br>> ФІЛЬТРИ НАКЛАДЕНО';
+            } catch (err) {
+                document.getElementById('logs').innerText = '> ПОМИЛКА КАМЕРИ: ' + err.message;
+            }
+
+            // Геолокація для відстані
             navigator.geolocation.getCurrentPosition((pos) => {
                 const myLat = pos.coords.latitude;
                 const myLon = pos.coords.longitude;
-                const target = [50.4501, 30.5234]; // Київ, Майдан
-
-                map.flyTo([myLat, myLon], 15);
-                L.circleMarker([myLat, myLon], { color: '#f00', radius: 10 }).addTo(map);
-
-                // Розрахунок відстані
-                const d = map.distance([myLat, myLon], target);
+                const target = {lat: 50.45, lon: 30.52}; // Київ
+                
+                // Спрощена формула відстані
+                const d = Math.sqrt(Math.pow(myLat - target.lat, 2) + Math.pow(myLon - target.lon, 2)) * 111320;
                 document.getElementById('dist-val').innerText = Math.round(d);
-                document.getElementById('status').innerText = 'TARGET LOCKED';
-                document.getElementById('logs').innerHTML = '> COORDS ACQUIRED<br>> DISTANCE CALCULATED<br>> READY TO ENGAGE';
+                document.getElementById('status').innerText = 'ЦІЛЬ ЗАФІКСОВАНА';
+                tg.HapticFeedback.notificationOccurred('success');
             });
         }
     </script>
 </body>
 </html>
- 
