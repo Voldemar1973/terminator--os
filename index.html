@@ -6,39 +6,59 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --t-red: #ff0000; --t-green: #00ff00; }
-        body { margin: 0; background: #000; color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
+        body { margin: 0; background: #000; color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; font-weight: bold; }
         
+        /* КОНТЕЙНЕР ДЛЯ ВІДЕО */
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         
+        /* ЧЕРВОНИЙ ФІЛЬТР HUD */
         .hud-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 0, 0, 0.2);
+            background: rgba(255, 0, 0, 0.25);
             pointer-events: none; z-index: 2;
-            border: 2px solid rgba(255, 0, 0, 0.3);
-            box-sizing: border-box;
         }
 
-        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(0,0,0,0.7); padding: 10px; border-left: 3px solid var(--t-red); }
-        .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; }
+        /* ПОСТІЙНИЙ ВОДЯНИЙ ЗНАК (Для системних скріншотів) */
+        .hud-overlay::after {
+            content: "@TerminatorOS_Bot";
+            position: absolute;
+            bottom: 120px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 4px #000;
+        }
 
+        /* АНІМОВАНА ЛІНІЯ СКАНУВАННЯ */
+        .scanline {
+            position: absolute; width: 100%; height: 4px;
+            background: rgba(255, 0, 0, 0.4);
+            top: 0; z-index: 3;
+            animation: moveScanline 4s linear infinite;
+        }
+        @keyframes moveScanline { from { top: -5%; } to { top: 105%; } }
+
+        /* СИСТЕМНЕ ТАБЛО */
+        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(10,0,0,0.8); padding: 12px; border-left: 4px solid var(--t-red); font-size: 13px; }
+        .logs { font-size: 11px; color: var(--t-green); margin-top: 5px; }
+
+        /* ВІДСТАНЬ */
         .dist-container {
-            position: absolute; bottom: 150px; width: 100%; text-align: center;
-            z-index: 10; font-size: 24px; color: var(--t-green); text-shadow: 0 0 10px #00ff00;
+            position: absolute; bottom: 180px; width: 100%; text-align: center;
+            z-index: 10; font-size: 26px; color: var(--t-green); text-shadow: 0 0 10px #00ff00;
         }
 
-        .controls {
-            position: absolute; bottom: 40px; width: 100%; display: flex;
-            justify-content: center; gap: 15px; z-index: 10; padding: 0 20px; box-sizing: border-box;
-        }
-
-        .btn {
-            background: rgba(0,0,0,0.8); border: 2px solid var(--t-red);
-            color: var(--t-red); padding: 15px; cursor: pointer; font-weight: bold;
-        }
+        /* КНОПКИ */
+        .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 15px; z-index: 10; padding: 0 20px; box-sizing: border-box; }
+        .btn { background: rgba(10,0,0,0.9); border: 2px solid var(--t-red); color: var(--t-red); padding: 15px; cursor: pointer; font-weight: bold; text-transform: uppercase; font-size: 12px; }
         .btn-snap { border-color: var(--t-green); color: var(--t-green); flex: 1; }
-        .btn-main { flex: 2; }
+        .btn-main { flex: 2; letter-spacing: 1px; }
+        .btn:active { background: var(--t-red); color: #000; }
+        .btn-snap:active { background: var(--t-green); color: #000; }
 
+        /* ПРИХОВАНИЙ КАНВАС */
         #snap-canvas { display: none; }
     </style>
 </head>
@@ -46,20 +66,21 @@
     <div id="video-container">
         <video id="v" autoplay playsinline muted></video>
         <div class="hud-overlay"></div>
+        <div class="scanline"></div>
     </div>
 
     <div class="header">
-        <div id="status">T-800: STANDBY</div>
-        <div class="logs" id="logs">> СИСТЕМА ГОТОВА</div>
+        <div id="status">T-800 SYSTEM: READY</div>
+        <div id="logs" class="logs">> WAITING FOR INITIALIZATION...</div>
     </div>
 
     <div class="dist-container">
-        DIST: <span id="dist-val">00000</span> M
+        ВІДСТАНЬ: <span id="dist-val">00000</span> М
     </div>
 
     <div class="controls">
         <button class="btn btn-snap" onclick="takeSnapshot()">📷 SNAP</button>
-        <button class="btn btn-main" id="startBtn" onclick="initCamera()">INITIALIZE VISION</button>
+        <button class="btn btn-main" onclick="initCamera()">INITIALIZE VISION</button>
     </div>
 
     <canvas id="snap-canvas"></canvas>
@@ -73,7 +94,6 @@
 
         async function initCamera() {
             const v = document.getElementById('v');
-            const logs = document.getElementById('logs');
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment" }, 
@@ -82,18 +102,18 @@
                 v.srcObject = stream;
                 v.play();
                 document.getElementById('status').innerText = 'SYSTEM: LIVE';
-                logs.innerHTML = '> ОПТИКА АКТИВОВАНА<br>> СКАНУВАННЯ...';
+                document.getElementById('logs').innerHTML = '> OPTICS ACTIVE<br>> SCANNING SECTOR...';
                 tg.HapticFeedback.impactOccurred('heavy');
-                updateDist();
+                startTracking();
             } catch (err) {
-                logs.innerText = '> ПОМИЛКА: ' + err.name;
-                alert('Будь ласка, надайте доступ до камери!');
+                document.getElementById('logs').innerText = '> ERROR: ' + err.name;
+                alert('Потрібен доступ до камери!');
             }
         }
 
-        function updateDist() {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const target = {lat: 50.45, lon: 30.52};
+        function startTracking() {
+            navigator.geolocation.watchPosition((pos) => {
+                const target = {lat: 50.4501, lon: 30.5234}; // Київ
                 const d = Math.sqrt(Math.pow(pos.coords.latitude - target.lat, 2) + Math.pow(pos.coords.longitude - target.lon, 2)) * 111320;
                 currentDist = Math.round(d).toString();
                 document.getElementById('dist-val').innerText = currentDist;
@@ -105,33 +125,40 @@
             const canvas = document.getElementById('snap-canvas');
             const ctx = canvas.getContext('2d');
 
+            if (!v.srcObject) return;
+
             canvas.width = v.videoWidth;
             canvas.height = v.videoHeight;
 
-            // 1. Малюємо кадр
+            // 1. Кадр з камери
             ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
 
             // 2. Червоний фільтр
-            ctx.fillStyle = "rgba(255, 0, 0, 0.25)";
+            ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // 3. Водяний знак (Реклама бота)
+            // 3. Дані на фото (Водяний знак + Дистанція)
             ctx.fillStyle = "white";
-            ctx.font = "bold 30px Arial";
-            ctx.fillText("@TerminatorOS_Bot", 30, canvas.height - 40);
+            ctx.font = "bold " + (canvas.height * 0.05) + "px Arial";
+            ctx.fillText("@TerminatorOS_Bot", 30, canvas.height - 50);
 
-            // 4. Дані HUD
             ctx.fillStyle = "#00ff00";
-            ctx.fillText("DIST: " + currentDist + " M", 30, 60);
-            
-            // Зберігання
-            const link = document.createElement('a');
-            link.download = 'terminator_snap.png';
-            link.href = canvas.toDataURL();
-            link.click();
-            
-            tg.HapticFeedback.notificationOccurred('success');
-            document.getElementById('status').innerText = 'PHOTO SAVED';
+            ctx.font = "bold " + (canvas.height * 0.06) + "px Arial";
+            ctx.fillText("DIST: " + currentDist + " M", 30, 80);
+
+            // 4. Збереження
+            try {
+                const dataUrl = canvas.toDataURL("image/png");
+                const link = document.createElement('a');
+                link.download = `T800_TARGET_${Date.now()}.png`;
+                link.href = dataUrl;
+                link.click();
+                
+                document.getElementById('status').innerText = 'DATA EXPORTED';
+                tg.HapticFeedback.notificationOccurred('success');
+            } catch (e) {
+                document.getElementById('logs').innerText = '> EXPORT FAILED';
+            }
         }
     </script>
 </body>
