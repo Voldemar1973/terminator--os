@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+        <!DOCTYPE html>
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
@@ -7,44 +7,46 @@
     <link rel='stylesheet' href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-        :root { --main-color: #00f2ff; --bg-dark: #000b14; }
-        body { margin: 0; background: var(--bg-dark); color: var(--main-color); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; }
+        /* ЗМІНИВ КОЛІР НА ЧЕРВОНИЙ - ПОВНИЙ T-800 HUD */
+        :root { --main-color: #ff0000; --secondary-color: #aa0000; --bg-dark: #000000; }
+        body { margin: 0; background: var(--bg-dark); color: var(--main-color); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; }
         
-        /* Мапа з фільтрами під нічне бачення */
-        #map { width: 100%; height: 100vh; filter: brightness(0.5) contrast(1.2) sepia(100%) hue-rotate(140deg) saturate(3); }
+        /* Червона тактична мапа - Sepia(100%), Hue-rotate(0) */
+        #map { width: 100%; height: 100vh; filter: brightness(0.7) contrast(1.2) sepia(100%) hue-rotate(0deg) saturate(3); transition: opacity 2s ease; opacity: 0; }
         
-        /* Ефект Радара поверх мапи */
+        /* Радар поверх мапи - червоний */
         .radar-overlay {
             position: absolute; top: 50%; left: 50%; width: 150vmax; height: 150vmax;
             transform: translate(-50%, -50%);
-            background: repeating-radial-gradient(circle, rgba(0,242,255,0.05) 0%, rgba(0,242,255,0.05) 10%, transparent 10.1%, transparent 20%);
+            background: repeating-radial-gradient(circle, rgba(255,0,0,0.03) 0%, rgba(255,0,0,0.03) 8%, transparent 8.1%, transparent 16%);
             pointer-events: none; z-index: 1000;
         }
         
+        /* Промінь сканера - червоний */
         .radar-sweep {
             position: absolute; top: 50%; left: 50%; width: 100vmax; height: 100vmax;
-            background: conic-gradient(from 0deg, rgba(0,242,255,0.2) 0deg, transparent 90deg);
+            background: conic-gradient(from 0deg, rgba(255,0,0,0.15) 0deg, transparent 60deg);
             transform: translate(-50%, -50%);
-            animation: rotate 4s linear infinite;
+            animation: rotate 6s linear infinite;
             z-index: 1001; pointer-events: none;
         }
 
         @keyframes rotate { from { transform: translate(-50%, -50%) rotate(0deg); } to { transform: translate(-50%, -50%) rotate(360deg); } }
 
-        .header { position: absolute; top: 15px; left: 15px; z-index: 1005; background: rgba(0,11,20,0.85); padding: 12px; border-left: 4px solid var(--main-color); border-bottom: 1px solid var(--main-color); }
-        .coords { font-size: 11px; margin-top: 5px; color: rgba(0,242,255,0.7); }
+        .header { position: absolute; top: 15px; left: 15px; z-index: 1005; background: rgba(10,0,0,0.9); padding: 12px; border-left: 4px solid var(--main-color); border-bottom: 1px solid var(--main-color); text-transform: uppercase; font-weight: bold; font-size: 13px; }
+        .coords { font-size: 10px; margin-top: 5px; color: rgba(255,0,0,0.7); }
 
         .btn-scan { 
             position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); 
-            z-index: 1005; background: rgba(0,20,30,0.9); border: 2px solid var(--main-color); 
+            z-index: 1005; background: rgba(10,0,0,0.9); border: 2px solid var(--main-color); 
             color: var(--main-color); padding: 15px 35px; cursor: pointer; 
             text-transform: uppercase; font-weight: bold; letter-spacing: 2px;
-            box-shadow: 0 0 20px rgba(0,242,255,0.3);
+            box-shadow: 0 0 15px rgba(255,0,0,0.3); transition: all 0.3s ease;
         }
+        .btn-scan:active { background: var(--main-color); color: var(--bg-dark); }
 
-        /* Анімація пульсуючої точки */
-        .leaflet-marker-icon { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .leaflet-marker-icon { animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.2; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
     </style>
 </head>
 <body>
@@ -52,8 +54,8 @@
     <div class="radar-sweep"></div>
     
     <div class="header">
-        <div id="agent-status">SYSTEM: READY</div>
-        <div class="coords" id="pos">TARGET LOCATION: UNKNOWN</div>
+        <div id="agent-status">T-800 SYSTEM: STANDBY</div>
+        <div class="coords" id="pos">WAITING FOR T-OS SCAN...</div>
     </div>
 
     <div id="map"></div>
@@ -66,31 +68,31 @@
         tg.expand();
 
         const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([50.45, 30.52], 13);
-        
-        // Використовуємо темніший шар мапи
+        // Використовуємо найтемніший шар мапи, який тільки є
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
         let marker = L.circleMarker([50.45, 30.52], { 
-            color: '#00f2ff', fillColor: '#00f2ff', fillOpacity: 0.8, radius: 8 
+            color: '#ff0000', fillColor: '#ff0000', fillOpacity: 0.8, radius: 11 
         }).addTo(map);
 
         function findMe() {
             tg.HapticFeedback.impactOccurred('heavy');
             document.getElementById('agent-status').innerText = 'SCANNING...';
+            document.getElementById('map').style.opacity = '1'; 
             
             navigator.geolocation.getCurrentPosition((position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
                 
-                document.getElementById('pos').innerText = `LAT: ${lat.toFixed(4)} | LON: ${lon.toFixed(4)}`;
-                document.getElementById('agent-status').innerText = 'TARGET ACQUIRED';
+                document.getElementById('pos').innerText = `T-OS LAT: ${lat.toFixed(4)} | LON: ${lon.toFixed(4)}`;
+                document.getElementById('agent-status').innerText = 'TARGET LOCKED';
                 
-                map.flyTo([lat, lon], 15, { duration: 2 });
+                map.flyTo([lat, lon], 16, { duration: 2.5 });
                 marker.setLatLng([lat, lon]);
                 
                 tg.HapticFeedback.notificationOccurred('success');
             }, (err) => {
-                document.getElementById('agent-status').innerText = 'ERROR: GPS BLOCKED';
+                document.getElementById('agent-status').innerText = 'ERROR: GPS LINK FAILED';
             });
         }
         
@@ -99,4 +101,3 @@
     </script>
 </body>
 </html>
-
