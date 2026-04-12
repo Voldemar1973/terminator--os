@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminator Vision AI</title>
+    <title>Terminator AI Vision</title>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
@@ -15,20 +15,13 @@
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
         canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
         
-        .hud-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 0, 0, 0.15);
-            pointer-events: none; z-index: 2;
-        }
-
-        .watermark-ui {
-            position: absolute; bottom: 130px; left: 20px;
-            color: rgba(255, 255, 255, 0.7);
-            font-size: 14px; letter-spacing: 2px; z-index: 10;
-        }
+        .hud-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.15); pointer-events: none; z-index: 2; }
+        .watermark-ui { position: absolute; bottom: 130px; left: 20px; color: rgba(255, 255, 255, 0.7); font-size: 14px; letter-spacing: 2px; z-index: 10; }
 
         .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(20,0,0,0.85); padding: 10px; border-left: 3px solid var(--t-red); min-width: 200px; }
         .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; line-height: 1.2; }
+
+        .dist-panel { position: absolute; bottom: 180px; width: 100%; text-align: center; z-index: 10; font-size: 24px; color: var(--t-green); text-shadow: 0 0 10px rgba(0, 255, 0, 0.7); }
 
         .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 10; padding: 0 15px; box-sizing: border-box; }
         .btn-main { background: rgba(15,0,0,0.9); border: 2px solid var(--t-red); color: var(--t-red); padding: 20px; cursor: pointer; font-family: inherit; width: 100%; font-size: 14px; letter-spacing: 2px; }
@@ -44,13 +37,17 @@
 
     <div class="header">
         <div id="status">AI: STANDBY</div>
-        <div id="logs" class="logs">> ЗАПУСТІТЬ СИСТЕМУ...</div>
+        <div id="logs" class="logs">> ОЧІКУВАННЯ АКТИВАЦІЇ...</div>
+    </div>
+
+    <div class="dist-panel">
+        ВІДСТАНЬ: <span id="dist-val">00000</span> М
     </div>
 
     <div class="watermark-ui">@TERMINATOROS_BOT</div>
 
     <div class="controls">
-        <button class="btn-main" onclick="startAI()">INITIALIZE AI VISION</button>
+        <button class="btn-main" onclick="initSystem()">ACTIVATE TERMINATOR VISION</button>
     </div>
 
     <script>
@@ -62,69 +59,66 @@
         const video = document.getElementById('v');
         const canvas = document.getElementById('c');
         const ctx = canvas.getContext('2d');
-        const logs = document.getElementById('logs');
+        const distVal = document.getElementById('dist-val');
 
-        async function startAI() {
-            document.getElementById('status').innerText = 'LOADING MODEL...';
-            logs.innerHTML = '> ЗАВАНТАЖЕННЯ НЕЙРОМЕРЕЖІ...<br>> ОЧІКУЙТЕ (БЛИЗЬКО 5МБ)';
+        async function initSystem() {
+            document.getElementById('status').innerText = 'INITIALIZING...';
             
+            // 1. Запит локації
+            navigator.geolocation.getCurrentPosition((pos) => {
+                startTracking();
+            }, (err) => {
+                alert("Для розрахунку відстані потрібен GPS!");
+            });
+
+            // 2. Запуск камери та AI
             try {
-                // 1. Запуск камери
                 const stream = await navigator.mediaDevices.getUserMedia({ 
                     video: { facingMode: "environment" }, audio: false 
                 });
                 video.srcObject = stream;
-
-                // 2. Завантаження моделі COCO-SSD
+                
+                document.getElementById('logs').innerHTML = '> CAMERA: OK<br>> LOADING AI MODEL...';
                 model = await cocoSsd.load();
                 
                 document.getElementById('status').innerText = 'AI: ACTIVE';
-                logs.innerHTML = '> МОДЕЛЬ ЗАВАНТАЖЕНО<br>> ПОШУК ЦІЛЕЙ...';
-                tg.HapticFeedback.impactOccurred('heavy');
+                document.getElementById('logs').innerHTML = '> SYSTEM: ONLINE<br>> SCANNING TARGETS...';
                 
-                // Починаємо детекцію
                 detectFrame();
             } catch (err) {
-                logs.innerText = '> ПОМИЛКА: ' + err.message;
+                alert("Помилка камери: " + err.message);
             }
+        }
+
+        function startTracking() {
+            navigator.geolocation.watchPosition((pos) => {
+                const target = {lat: 50.45, lon: 30.52}; // Наприклад, Київ
+                const d = Math.sqrt(Math.pow(pos.coords.latitude - target.lat, 2) + Math.pow(pos.coords.longitude - target.lon, 2)) * 111320;
+                distVal.innerText = Math.round(d).toString().padStart(5, '0');
+            }, null, { enableHighAccuracy: true });
         }
 
         async function detectFrame() {
             if (!model) return;
-
-            // Налаштування розміру канвасу під відео
             if (canvas.width !== video.videoWidth) {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
             }
 
-            // Розпізнавання
             const predictions = await model.detect(video);
-            
-            // Очищення попередніх рамок
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             predictions.forEach(prediction => {
                 const [x, y, width, height] = prediction.bbox;
-                
-                // Малюємо рамку цілі
                 ctx.strokeStyle = '#ff0000';
                 ctx.lineWidth = 4;
                 ctx.strokeRect(x, y, width, height);
 
-                // Додаємо куточки (для стилю)
                 ctx.fillStyle = '#ff0000';
-                ctx.fillRect(x, y, 20, 5);
-                ctx.fillRect(x, y, 5, 20);
-
-                // Текст над рамкою
                 ctx.font = 'bold 20px Arial';
                 ctx.fillText('TARGET: ' + prediction.class.toUpperCase(), x, y > 25 ? y - 10 : 20);
-                ctx.font = '14px Arial';
-                ctx.fillText('CONFIDENCE: ' + Math.round(prediction.score * 100) + '%', x, y > 25 ? y + 15 : 45);
             });
 
-            // Наступний кадр
             requestAnimationFrame(detectFrame);
         }
     </script>
