@@ -5,85 +5,179 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --t-red: #ff0000; --t-green: #00ff00; }
-        body { margin: 0; background: #000; color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; font-weight: bold; }
+        :root { --t-red: #ff0000; --t-green: #00ff00; --bg: #000; }
+        body { margin: 0; background: var(--bg); color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; font-weight: bold; }
         
-        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        video { width: 100%; height: 100%; object-fit: cover; }
+        /* КОНТЕЙНЕР ДЛЯ ВІДЕО */
+        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; overflow: hidden; }
+        video { width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); } /* Віддзеркалення для селфі-камери */
         
-        /* ЧЕРВОНИЙ ФІЛЬТР */
+        /* ЧЕРВОНИЙ ФІЛЬТР HUD */
         .hud-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 0, 0, 0.25);
             pointer-events: none; z-index: 2;
         }
 
-        /* АНІМОВАНА ЛІНІЯ СКАНУВАННЯ (ЯК У СТАРИХ ТВ) */
+        /* АНІМОВАНА ЛІНІЯ СКАНУВАННЯ */
         .scanline {
-            position: absolute; width: 100%; height: 10px;
-            background: linear-gradient(to bottom, transparent, rgba(255, 0, 0, 0.3), transparent);
-            top: -10px; z-index: 3;
+            position: absolute; width: 100%; height: 4px;
+            background: rgba(255, 0, 0, 0.4);
+            top: 0; z-index: 3;
             animation: moveScanline 4s linear infinite;
         }
-        @keyframes moveScanline { 
-            0% { top: -10px; } 
-            100% { top: 100%; } 
-        }
+        @keyframes moveScanline { from { top: -5%; } to { top: 105%; } }
 
+        /* Системне табло зверху */
         .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(10,0,0,0.8); padding: 12px; border-left: 4px solid var(--t-red); font-size: 13px; }
         .logs { font-size: 11px; color: var(--t-green); margin-top: 5px; }
 
+        /* ВІДСТАНЬ - ЗЕЛЕНИЙ НЕОН */
         .dist-container {
-            position: absolute; bottom: 140px; /* Підняв вище, щоб не заважало кнопці */
-            width: 100%; text-align: center;
-            z-index: 10; font-size: 26px;
+            position: absolute; bottom: 180px; width: 100%; text-align: center;
+            z-index: 10; font-size: 26px; font-weight: bold;
             color: var(--t-green); text-shadow: 0 0 10px #00ff00;
         }
 
-        .btn-scan { 
-            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); 
-            z-index: 10; background: rgba(10,0,0,0.9); border: 2px solid var(--t-red); 
-            color: var(--t-red); padding: 15px 35px; cursor: pointer; font-weight: bold;
-        }
+        /* КНОПКИ */
+        .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 20px; z-index: 10; padding: 0 20px; box-sizing: border-box; }
+        .btn { background: rgba(10,0,0,0.9); border: 2px solid var(--t-red); color: var(--t-red); padding: 15px; cursor: pointer; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; transition: all 0.2s ease; font-size: 12px; }
+        .btn:active { background: var(--t-red); color: #000; }
+        .btn-main { flex: 2; font-size: 14px; letter-spacing: 2px; }
+        .btn-snap { flex: 1; border-color: var(--t-green); color: var(--t-green); }
+        .btn-snap:active { background: var(--t-green); color: #000; }
+
+        /* ПРИХОВАНИЙ КАНВАС ДЛЯ СКРІНШОТА */
+        #snapshot-canvas { display: none; }
     </style>
 </head>
 <body>
     <div id="video-container">
-        <video id="v" autoplay playsinline></video>
+        <video id="v" autoplay playsinline muted></video>
         <div class="hud-layer"></div>
-        <div class="scanline"></div> </div>
+        <div class="scanline"></div>
+    </div>
 
     <div class="header">
-        <div id="status">T-800 SYSTEM: READY</div>
-        <div class="logs" id="logs">> СИСТЕМА ГОТОВА...</div>
+        <div id="status">T-800 SYSTEM: STANDBY</div>
+        <div class="logs" id="logs">> ОЧІКУВАННЯ ІНІЦІАЛІЗАЦІЇ...</div>
     </div>
 
     <div class="dist-container">
         ВІДСТАНЬ: <span id="dist-val">00000</span> М
     </div>
 
-    <button class="btn-scan" onclick="initTerminator()">УВІМКНУТИ КІБЕР-ЗІР</button>
+    <div class="controls">
+        <button class="btn btn-snap" onclick="takeSnapshot()">📷</button>
+        <button class="btn btn-main" onclick="initTerminator()">УВІМКНУТИ КІБЕР-ЗІР</button>
+    </div>
+
+    <canvas id="snapshot-canvas"></canvas>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
+        tg.expand();
 
+        let currentCoords = [50.4501, 30.5234]; // Київ, Майдан за замовчуванням
+        let currentDist = "00000";
+
+        // Ініціалізація камери
         async function initTerminator() {
+            document.getElementById('status').innerText = 'INITIALIZING...';
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "environment" }, 
+                    audio: false 
+                });
                 document.getElementById('v').srcObject = stream;
                 document.getElementById('status').innerText = 'SYSTEM: LIVE';
                 document.getElementById('logs').innerHTML = '> CAMERA ACTIVE<br>> SCANNING...';
                 tg.HapticFeedback.impactOccurred('heavy');
             } catch (err) {
-                document.getElementById('logs').innerText = '> ERROR: NO VISION';
+                document.getElementById('logs').innerText = '> CAMERA ERROR: DENIED';
+                document.getElementById('status').innerText = 'CRITICAL ERROR';
             }
 
+            // Геолокація
             navigator.geolocation.getCurrentPosition((pos) => {
-                const target = {lat: 50.4501, lon: 30.5234}; // Київ
-                const d = Math.sqrt(Math.pow(pos.coords.latitude - target.lat, 2) + Math.pow(pos.coords.longitude - target.lon, 2)) * 111320;
-                document.getElementById('dist-val').innerText = Math.round(d);
+                const myLat = pos.coords.latitude;
+                const myLon = pos.coords.longitude;
+                // Ціль: Київ, Майдан
+                const target = {lat: 50.4501, lon: 30.5234}; 
+                
+                // Проста формула відстані
+                const d = Math.sqrt(Math.pow(myLat - target.lat, 2) + Math.pow(myLon - target.lon, 2)) * 111320;
+                currentDist = Math.round(d).toString();
+                document.getElementById('dist-val').innerText = currentDist;
+                document.getElementById('status').innerText = 'TARGET LOCKED';
+                document.getElementById('logs').innerHTML = '> COORDS ACQUIRED<br>> DISTANCE CALCULATED';
+                tg.HapticFeedback.notificationOccurred('success');
             });
+        }
+
+        // --- ФУНКЦІЯ СКРІНШОТА З ВОДЯНИМ ЗНАКОМ ---
+        function takeSnapshot() {
+            tg.HapticFeedback.impactOccurred('medium');
+            const video = document.getElementById('v');
+            const canvas = document.getElementById('snapshot-canvas');
+            const ctx = canvas.getContext('2d');
+
+            if (!video.srcObject) {
+                alert('Спочатку увімкніть Кібер-Зір!');
+                return;
+            }
+
+            // 1. Встановлюємо розмір канвасу як у відео
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // 2. Малюємо кадр з відео (зберігши віддзеркалення якщо це селфі)
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // Скидаємо трансформацію
+
+            // 3. Накладаємо ЧЕРВОНИЙ ФІЛЬТР (як у HUD)
+            ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 4. Малюємо ТЕКСТ ТА ВОДЯНИЙ ЗНАК (червоний та зелений неон)
+            ctx.font = 'bold ' + (canvas.height * 0.04) + 'px "Courier New", monospace';
+            ctx.textBaseline = 'top';
+
+            // Логотип/Статус зверху
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('T-OS | TARGET LOCKED', canvas.width * 0.05, canvas.height * 0.03);
+
+            // Відстань (зелена)
+            ctx.fillStyle = '#00ff00';
+            ctx.font = 'bold ' + (canvas.height * 0.06) + 'px "Courier New", monospace';
+            ctx.fillText('ВІДСТАНЬ: ' + currentDist + ' M', canvas.width * 0.05, canvas.height * 0.1);
+
+            // ВОДЯНИЙ ЗНАК (внизу) - як реклама
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.font = 'bold ' + (canvas.height * 0.03) + 'px "Courier New", monospace';
+            const watermark = '@TerminatorOS_Bot';
+            const metrics = ctx.measureText(watermark);
+            ctx.fillText(watermark, canvas.width - metrics.width - (canvas.width * 0.05), canvas.height - (canvas.height * 0.05));
+
+            // Дата та час
+            const now = new Date();
+            ctx.fillText(now.toLocaleString('uk-UA'), canvas.width * 0.05, canvas.height - (canvas.height * 0.05));
+
+            // 5. Зберігаємо як зображення та пропонуємо завантажити
+            const image = canvas.toDataURL("image/png");
+            
+            // Створюємо приховане посилання для завантаження
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = 'T-OS-Snapshot-' + now.toISOString().slice(0,10) + '.png';
+            link.click();
+            
+            tg.HapticFeedback.notificationOccurred('success');
+            // Можна додати сповіщення користувачеві в самому HUD
+            document.getElementById('status').innerText = 'SNAPSHOT SAVED';
         }
     </script>
 </body>
