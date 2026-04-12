@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --main-color: #ff0000; --bg-color: #000; }
+        body { margin: 0; background: var(--bg-color); color: var(--main-color); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* Верхня панель статусів */
+        .status-bar { display: flex; justify-content: space-between; padding: 10px; font-size: 10px; border-bottom: 1px solid #330000; }
+        .bar-item { display: flex; flex-direction: column; }
+        .progress-line { width: 50px; height: 4px; background: #220000; margin-top: 3px; position: relative; }
+        .progress-fill { height: 100%; background: var(--main-color); box-shadow: 0 0 5px var(--main-color); }
+
+        /* Радарний відсік */
+        .scanner-container { flex-grow: 1; display: flex; align-items: center; justify-content: center; position: relative; }
+        .radar { width: 250px; height: 250px; border: 2px solid var(--main-color); border-radius: 50%; position: relative; opacity: 0.7; }
+        .radar-line { width: 50%; height: 2px; background: var(--main-color); position: absolute; top: 50%; left: 50%; transform-origin: left; animation: scan 3s linear infinite; box-shadow: 0 0 10px var(--main-color); }
+        @keyframes scan { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Твоє ім'я */
+        .user-id { position: absolute; top: 20px; left: 20px; font-weight: bold; font-size: 14px; text-shadow: 0 0 5px var(--main-color); }
+
+        /* Кнопки дій */
+        .controls { padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .btn { border: 2px solid var(--main-color); background: none; color: var(--main-color); padding: 15px; font-family: inherit; font-weight: bold; text-transform: uppercase; cursor: pointer; transition: 0.1s; }
+        .btn:active { background: var(--main-color); color: #000; }
+        .btn-large { grid-column: span 2; font-size: 20px; border-width: 4px; }
+
+        .scan-text { position: absolute; bottom: 20%; font-size: 12px; letter-spacing: 2px; animation: blink 1s infinite; }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div class="status-bar">
+        <div class="bar-item">STATUS<div class="progress-line"><div class="progress-fill" style="width: 85%;"></div></div></div>
+        <div class="bar-item">SIGNAL<div class="progress-line"><div class="progress-fill" style="width: 70%;"></div></div></div>
+        <div class="bar-item">BATTERY<div class="progress-line"><div class="progress-fill" style="width: 94%;"></div></div></div>
+    </div>
+
+    <div class="scanner-container">
+        <div class="user-id" id="agent-name">AGENT: INITIALIZING...</div>
+        <div class="radar"><div class="radar-line"></div></div>
+        <div class="scan-text" id="target-info">TARGET: [HUMAN] DETECTED - 1.2KM</div>
+    </div>
+
+    <div class="controls">
+        <button class="btn" onclick="vibrate('light')">SCAN</button>
+        <button class="btn" onclick="vibrate('light')">JAMMER</button>
+        <button class="btn btn-large" onclick="vibrate('heavy')">ATTACK</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        tg.enableClosingConfirmation();
+
+        // Отримання імені
+        const user = tg.initDataUnsafe?.user;
+        if (user && user.first_name) {
+            document.getElementById('agent-name').innerText = 'AGENT: ' + user.first_name.toUpperCase();
+        } else {
+            document.getElementById('agent-name').innerText = 'AGENT: DEMO_MODE';
+        }
+
+        function vibrate(type) {
+            if (type === 'heavy') {
+                tg.HapticFeedback.notificationOccurred('error');
+            } else {
+                tg.HapticFeedback.impactOccurred('medium');
+            }
+        }
+    </script>
+</body>
+</html>
