@@ -11,53 +11,51 @@
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; }
         
-        /* ЧЕРВОНИЙ ФІЛЬТР + ЛІНІЯ СКАНУВАННЯ (Scanline) */
+        /* ЧЕРВОНИЙ ФІЛЬТР */
         .hud-layer {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255, 0, 0, 0.25);
             pointer-events: none; z-index: 2;
         }
 
-        /* АНІМОВАНА ЛІНІЯ СКАНУВАННЯ */
+        /* АНІМОВАНА ЛІНІЯ СКАНУВАННЯ (ЯК У СТАРИХ ТВ) */
         .scanline {
-            position: absolute; width: 100%; height: 3px;
-            background: rgba(255, 0, 0, 0.4);
-            top: 0; z-index: 3;
-            animation: moveScanline 3.5s linear infinite;
+            position: absolute; width: 100%; height: 10px;
+            background: linear-gradient(to bottom, transparent, rgba(255, 0, 0, 0.3), transparent);
+            top: -10px; z-index: 3;
+            animation: moveScanline 4s linear infinite;
         }
-        @keyframes moveScanline { from { top: -5%; } to { top: 105%; } }
+        @keyframes moveScanline { 
+            0% { top: -10px; } 
+            100% { top: 100%; } 
+        }
 
-        /* Системне табло зверху */
-        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(10,0,0,0.8); padding: 12px; border-left: 4px solid var(--t-red); border-bottom: 1px solid var(--t-red); font-size: 13px; }
+        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(10,0,0,0.8); padding: 12px; border-left: 4px solid var(--t-red); font-size: 13px; }
         .logs { font-size: 11px; color: var(--t-green); margin-top: 5px; }
 
-        /* ВІДСТАНЬ - ЗЕЛЕНИЙ НЕОН (Підняв вище) */
         .dist-container {
-            position: absolute; bottom: 130px; /* Збільшив відступ, щоб не перекривало */
+            position: absolute; bottom: 140px; /* Підняв вище, щоб не заважало кнопці */
             width: 100%; text-align: center;
-            z-index: 10; font-size: 26px; font-weight: bold;
+            z-index: 10; font-size: 26px;
             color: var(--t-green); text-shadow: 0 0 10px #00ff00;
         }
 
         .btn-scan { 
             position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); 
             z-index: 10; background: rgba(10,0,0,0.9); border: 2px solid var(--t-red); 
-            color: var(--t-red); padding: 15px 35px; cursor: pointer; font-weight: bold; letter-spacing: 2px;
-            box-shadow: 0 0 15px rgba(255,0,0,0.3); transition: all 0.2s ease;
+            color: var(--t-red); padding: 15px 35px; cursor: pointer; font-weight: bold;
         }
-        .btn-scan:active { background: var(--t-red); color: #000; }
     </style>
 </head>
 <body>
     <div id="video-container">
         <video id="v" autoplay playsinline></video>
         <div class="hud-layer"></div>
-        <div class="scanline"></div>
-    </div>
+        <div class="scanline"></div> </div>
 
     <div class="header">
         <div id="status">T-800 SYSTEM: READY</div>
-        <div class="logs" id="logs">> WAITING FOR VISION INIT...</div>
+        <div class="logs" id="logs">> СИСТЕМА ГОТОВА...</div>
     </div>
 
     <div class="dist-container">
@@ -71,37 +69,20 @@
         tg.ready();
 
         async function initTerminator() {
-            document.getElementById('status').innerText = 'INITIALIZING...';
-            
-            // Запуск камери
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" }, 
-                    audio: false 
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
                 document.getElementById('v').srcObject = stream;
                 document.getElementById('status').innerText = 'SYSTEM: LIVE';
-                document.getElementById('logs').innerHTML = '> CAMERA ACTIVE<br>> FILTERS ENGAGED<br>> SCANNING...';
+                document.getElementById('logs').innerHTML = '> CAMERA ACTIVE<br>> SCANNING...';
                 tg.HapticFeedback.impactOccurred('heavy');
             } catch (err) {
-                document.getElementById('logs').innerText = '> CAMERA ERROR: ACCESS DENIED';
-                document.getElementById('status').innerText = 'CRITICAL ERROR';
+                document.getElementById('logs').innerText = '> ERROR: NO VISION';
             }
 
-            // Геолокація для відстані
             navigator.geolocation.getCurrentPosition((pos) => {
-                const myLat = pos.coords.latitude;
-                const myLon = pos.coords.longitude;
-                // Ціль: Київ, Майдан Незалежності (як приклад)
-                const target = {lat: 50.4501, lon: 30.5234}; 
-                
-                // Проста формула відстані (пряма лінія)
-                const d = Math.sqrt(Math.pow(myLat - target.lat, 2) + Math.pow(myLon - target.lon, 2)) * 111320;
+                const target = {lat: 50.4501, lon: 30.5234}; // Київ
+                const d = Math.sqrt(Math.pow(pos.coords.latitude - target.lat, 2) + Math.pow(pos.coords.longitude - target.lon, 2)) * 111320;
                 document.getElementById('dist-val').innerText = Math.round(d);
-                document.getElementById('status').innerText = 'TARGET LOCKED';
-                tg.HapticFeedback.notificationOccurred('success');
-            }, (err) => {
-                document.getElementById('status').innerText = 'GPS ERROR';
             });
         }
     </script>
