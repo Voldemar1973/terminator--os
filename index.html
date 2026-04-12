@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminator OS</title>
+    <title>Terminator Vision AI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root { --t-red: #ff0000; --t-green: #00ff00; }
@@ -11,149 +13,119 @@
         
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
+        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
         
         .hud-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255, 0, 0, 0.2);
+            background: rgba(255, 0, 0, 0.15);
             pointer-events: none; z-index: 2;
         }
 
         .watermark-ui {
             position: absolute; bottom: 130px; left: 20px;
             color: rgba(255, 255, 255, 0.7);
-            font-size: 14px; letter-spacing: 2px;
-            z-index: 10; text-shadow: 1px 1px 3px #000;
+            font-size: 14px; letter-spacing: 2px; z-index: 10;
         }
 
-        .scanline {
-            position: absolute; width: 100%; height: 2px;
-            background: rgba(255, 0, 0, 0.3);
-            top: 0; z-index: 3;
-            animation: moveScan 3s linear infinite;
-        }
-        @keyframes moveScan { from { top: 0; } to { top: 100%; } }
-
-        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(20,0,0,0.85); padding: 10px; border-left: 3px solid var(--t-red); }
+        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(20,0,0,0.85); padding: 10px; border-left: 3px solid var(--t-red); min-width: 200px; }
         .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; line-height: 1.2; }
 
-        .dist-panel {
-            position: absolute; bottom: 180px; width: 100%; text-align: center;
-            z-index: 10; font-size: 24px; color: var(--t-green);
-            text-shadow: 0 0 10px rgba(0, 255, 0, 0.7);
-        }
-
-        .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; gap: 10px; z-index: 10; padding: 0 15px; box-sizing: border-box; }
-        .btn { background: rgba(15,0,0,0.9); border: 1px solid var(--t-red); color: var(--t-red); padding: 18px; cursor: pointer; font-family: inherit; font-size: 12px; }
-        .btn-snap { border-color: var(--t-green); color: var(--t-green); flex: 1; }
-        .btn-main { flex: 2; }
-        .btn:active { background: var(--t-red); color: #000; }
-        .btn-snap:active { background: var(--t-green); color: #000; }
-
-        /* Полотно для фото (приховане) */
-        #snap-canvas { display: none; }
-        
-        /* Стиль для перегляду зробленого фото */
-        #photo-preview { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            z-index: 100; background: #000; flex-direction: column; align-items: center; justify-content: center;
-        }
-        #photo-preview img { max-width: 90%; max-height: 80%; border: 2px solid var(--t-red); }
-        .preview-text { color: var(--t-green); margin-bottom: 15px; text-align: center; padding: 10px; }
+        .controls { position: absolute; bottom: 40px; left: 0; width: 100%; display: flex; justify-content: center; z-index: 10; padding: 0 15px; box-sizing: border-box; }
+        .btn-main { background: rgba(15,0,0,0.9); border: 2px solid var(--t-red); color: var(--t-red); padding: 20px; cursor: pointer; font-family: inherit; width: 100%; font-size: 14px; letter-spacing: 2px; }
+        .btn-main:active { background: var(--t-red); color: #000; }
     </style>
 </head>
 <body>
     <div id="video-container">
         <video id="v" autoplay playsinline muted></video>
+        <canvas id="c"></canvas>
         <div class="hud-overlay"></div>
-        <div class="scanline"></div>
     </div>
 
     <div class="header">
-        <div id="status">T-800: READY</div>
-        <div id="logs" class="logs">> UPLINK STABLE<br>> SENSORS STANDBY</div>
+        <div id="status">AI: STANDBY</div>
+        <div id="logs" class="logs">> ЗАПУСТІТЬ СИСТЕМУ...</div>
     </div>
 
     <div class="watermark-ui">@TERMINATOROS_BOT</div>
 
-    <div class="dist-panel">
-        ВІДСТАНЬ: <span id="dist-val">00000</span> М
-    </div>
-
     <div class="controls">
-        <button class="btn btn-snap" onclick="takeSnapshot()">📷 SNAP</button>
-        <button class="btn btn-main" onclick="initCamera()">INITIALIZE VISION</button>
+        <button class="btn-main" onclick="startAI()">INITIALIZE AI VISION</button>
     </div>
-
-    <div id="photo-preview" onclick="this.style.display='none'">
-        <div class="preview-text">ТРИМАЙ ПАЛЕЦЬ НА ФОТО,<br>ЩОБ ЗБЕРЕГТИ ЙОГО</div>
-        <img id="preview-img" src="" alt="Snapshot">
-        <button class="btn" style="margin-top:20px">ПОВЕРНУТИСЬ</button>
-    </div>
-
-    <canvas id="snap-canvas"></canvas>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.ready();
         tg.expand();
 
-        let currentDist = "00000";
+        let model = null;
+        const video = document.getElementById('v');
+        const canvas = document.getElementById('c');
+        const ctx = canvas.getContext('2d');
+        const logs = document.getElementById('logs');
 
-        async function initCamera() {
-            const v = document.getElementById('v');
+        async function startAI() {
+            document.getElementById('status').innerText = 'LOADING MODEL...';
+            logs.innerHTML = '> ЗАВАНТАЖЕННЯ НЕЙРОМЕРЕЖІ...<br>> ОЧІКУЙТЕ (БЛИЗЬКО 5МБ)';
+            
             try {
+                // 1. Запуск камери
                 const stream = await navigator.mediaDevices.getUserMedia({ 
-                    video: { facingMode: "environment" }, 
-                    audio: false 
+                    video: { facingMode: "environment" }, audio: false 
                 });
-                v.srcObject = stream;
-                v.play();
-                document.getElementById('status').innerText = 'SYSTEM: LIVE';
-                document.getElementById('logs').innerHTML = '> OPTICS ACTIVE<br>> SCANNING...';
-                tg.HapticFeedback.impactOccurred('medium');
+                video.srcObject = stream;
+
+                // 2. Завантаження моделі COCO-SSD
+                model = await cocoSsd.load();
                 
-                navigator.geolocation.watchPosition((pos) => {
-                    const target = {lat: 50.45, lon: 30.52};
-                    const d = Math.sqrt(Math.pow(pos.coords.latitude - target.lat, 2) + Math.pow(pos.coords.longitude - target.lon, 2)) * 111320;
-                    currentDist = Math.round(d).toString();
-                    document.getElementById('dist-val').innerText = currentDist;
-                });
+                document.getElementById('status').innerText = 'AI: ACTIVE';
+                logs.innerHTML = '> МОДЕЛЬ ЗАВАНТАЖЕНО<br>> ПОШУК ЦІЛЕЙ...';
+                tg.HapticFeedback.impactOccurred('heavy');
+                
+                // Починаємо детекцію
+                detectFrame();
             } catch (err) {
-                alert('Потрібен доступ до камери!');
+                logs.innerText = '> ПОМИЛКА: ' + err.message;
             }
         }
 
-        function takeSnapshot() {
-            const v = document.getElementById('v');
-            const canvas = document.getElementById('snap-canvas');
-            const preview = document.getElementById('photo-preview');
-            const previewImg = document.getElementById('preview-img');
-            const ctx = canvas.getContext('2d');
+        async function detectFrame() {
+            if (!model) return;
 
-            if (!v.srcObject) return;
+            // Налаштування розміру канвасу під відео
+            if (canvas.width !== video.videoWidth) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+            }
 
-            canvas.width = v.videoWidth;
-            canvas.height = v.videoHeight;
-
-            // Малюємо все на канвас
-            ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "rgba(255, 0, 0, 0.3)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            // Розпізнавання
+            const predictions = await model.detect(video);
             
-            ctx.fillStyle = "white";
-            ctx.font = "bold " + (canvas.height * 0.04) + "px Courier New";
-            ctx.fillText("@TERMINATOROS_BOT", 20, canvas.height - 30);
-            
-            ctx.fillStyle = "#00ff00";
-            ctx.fillText("DIST: " + currentDist + " M", 20, 50);
+            // Очищення попередніх рамок
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Показуємо фото для збереження
-            const dataUrl = canvas.toDataURL("image/png");
-            previewImg.src = dataUrl;
-            preview.style.display = 'flex';
-            
-            tg.HapticFeedback.notificationOccurred('success');
-            document.getElementById('status').innerText = 'PHOTO READY';
+            predictions.forEach(prediction => {
+                const [x, y, width, height] = prediction.bbox;
+                
+                // Малюємо рамку цілі
+                ctx.strokeStyle = '#ff0000';
+                ctx.lineWidth = 4;
+                ctx.strokeRect(x, y, width, height);
+
+                // Додаємо куточки (для стилю)
+                ctx.fillStyle = '#ff0000';
+                ctx.fillRect(x, y, 20, 5);
+                ctx.fillRect(x, y, 5, 20);
+
+                // Текст над рамкою
+                ctx.font = 'bold 20px Arial';
+                ctx.fillText('TARGET: ' + prediction.class.toUpperCase(), x, y > 25 ? y - 10 : 20);
+                ctx.font = '14px Arial';
+                ctx.fillText('CONFIDENCE: ' + Math.round(prediction.score * 100) + '%', x, y > 25 ? y + 15 : 45);
+            });
+
+            // Наступний кадр
+            requestAnimationFrame(detectFrame);
         }
     </script>
 </body>
