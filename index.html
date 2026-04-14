@@ -3,108 +3,312 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Terminator Tactical OS</title>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <title>TERMINATOR - Tactical Pre-order</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root { --t-red: #ff0000; --t-green: #00ff00; }
-        body { margin: 0; background: #000; color: var(--t-red); font-family: 'Courier New', monospace; overflow: hidden; height: 100vh; text-transform: uppercase; font-weight: bold; }
-        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #100; }
-        video { width: 100%; height: 100%; object-fit: cover; position: absolute; }
-        canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 5; pointer-events: none; }
-        .hud-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.1); pointer-events: none; z-index: 2; border: 2px solid rgba(255,0,0,0.3); box-sizing: border-box; }
-        .header { position: absolute; top: 20px; left: 20px; z-index: 10; background: rgba(20,0,0,0.8); padding: 10px; border-left: 3px solid var(--t-red); }
-        .logs { font-size: 10px; color: var(--t-green); margin-top: 5px; }
-        .dist-panel { position: absolute; bottom: 180px; width: 100%; text-align: center; z-index: 10; font-size: 24px; color: var(--t-green); text-shadow: 0 0 10px #0f0; }
-        .controls { position: absolute; bottom: 30px; left: 0; width: 100%; display: flex; flex-direction: column; gap: 10px; z-index: 10; padding: 0 20px; box-sizing: border-box; }
-        .btn { background: rgba(15,0,0,0.9); border: 2px solid var(--t-red); color: var(--t-red); padding: 15px; cursor: pointer; font-family: inherit; font-size: 14px; width: 100%; text-transform: uppercase; }
-        .btn-gps { border-color: var(--t-green); color: var(--t-green); }
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-red: #ff003c;
+            --dark-bg: #050506;
+            --card-bg: rgba(10, 10, 12, 0.9);
+            --hud-line: rgba(0, 242, 255, 0.15);
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--dark-bg);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Героїчний фон із зображенням Термінатора */
+        .hero-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60vh; /* Зображення займає верхню частину */
+            background-image: 
+                linear-gradient(to bottom, transparent 0%, var(--dark-bg) 100%), /* Плавний перехід у чорний */
+                url('hero.jpg'); /* ВАШЕ ЗОБРАЖЕННЯ */
+            background-size: cover;
+            background-position: center top;
+            z-index: -1;
+            opacity: 0.8;
+        }
+
+        /* HUD сітка поверх всього */
+        .hud-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--hud-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--hud-line) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: -1;
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 0 20px;
+        }
+
+        .logo-glitch {
+            font-size: 2.2rem;
+            font-weight: 900;
+            letter-spacing: 5px;
+            color: #fff;
+            text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue);
+            animation: glitch 3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: skew(0deg); text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue); }
+            1% { transform: skew(3deg); opacity: 0.8; }
+            2% { transform: skew(-3deg); }
+            3% { transform: skew(0deg); opacity: 1; }
+        }
+
+        .ua-badge {
+            background: var(--neon-red);
+            font-size: 10px;
+            padding: 4px 12px;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+        }
+
+        /* Блок Вигоди */
+        .benefits-card {
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            margin: 20px 0;
+            font-family: sans-serif;
+            border-radius: 4px;
+            position: relative;
+            backdrop-filter: blur(5px);
+        }
+
+        .benefits-card::before {
+            content: "ECONOMY_REPORT";
+            position: absolute;
+            top: -8px;
+            left: 10px;
+            font-family: 'Orbitron';
+            font-size: 8px;
+            color: var(--neon-red);
+            background: var(--dark-bg);
+            padding: 0 5px;
+        }
+
+        .benefit-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+        }
+
+        .old-price { text-decoration: line-through; opacity: 0.5; }
+        .new-price { color: #00ff88; font-weight: bold; }
+
+        /* Stats HUD */
+        .stats-bar {
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-left: 3px solid var(--neon-blue);
+            margin-bottom: 25px;
+            border-right: 1px solid var(--hud-line);
+        }
+
+        .stat-label { font-size: 9px; opacity: 0.7; letter-spacing: 1px; text-transform: uppercase; }
+        .stat-value { font-size: 1.6rem; font-weight: bold; display: block; color: var(--neon-blue); }
+
+        .progress-bg { background: #1a1a1a; height: 4px; margin-top: 10px; }
+        .progress-fill { background: var(--neon-blue); height: 100%; width: 42%; box-shadow: 0 0 10px var(--neon-blue); transition: width 1s; }
+
+        /* Tactical Tiers */
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+            position: relative;
+            clip-path: polygon(0 0, 100% 0, 100% 90%, 95% 100%, 0 100%);
+            backdrop-filter: blur(5px);
+        }
+
+        .tier-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .tier-title { font-size: 0.8rem; letter-spacing: 2px; color: #888; text-transform: uppercase; }
+        .tier-price { font-size: 1.8rem; font-weight: bold; }
+
+        .feature-list { list-style: none; padding: 0; font-size: 0.8rem; margin-bottom: 20px; opacity: 0.8; font-family: sans-serif; line-height: 1.5; }
+        .feature-list li::before { content: "> "; color: var(--neon-blue); font-weight: bold; }
+
+        /* Акцентований PRO */
+        .card-pro {
+            border: 1px solid var(--neon-red) !important;
+            box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.1);
+        }
+
+        .btn-act {
+            width: 100%;
+            padding: 16px;
+            background: transparent;
+            border: 1px solid #fff;
+            color: #fff;
+            font-family: 'Orbitron';
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: 0.3s;
+            text-transform: uppercase;
+        }
+
+        .btn-act:active { background: white; color: black; }
+        
+        .btn-pro { border-color: var(--neon-red); color: var(--neon-red); }
+        .btn-pro:active { background: var(--neon-red); color: white; }
+
+        .hot-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--neon-red);
+            font-size: 9px;
+            padding: 2px 6px;
+            font-weight: bold;
+        }
+
+        footer { text-align: center; padding: 30px 0; font-size: 9px; opacity: 0.3; letter-spacing: 2px; line-height: 2; }
     </style>
 </head>
 <body>
-    <div id="video-container">
-        <video id="v" autoplay playsinline muted></video>
-        <canvas id="c"></canvas>
-        <div class="hud-overlay"></div>
+
+<div class="hero-bg"></div>
+<div class="hud-overlay"></div>
+
+<div class="container">
+    <header>
+        <div class="ua-badge">ПОПЕРЕДНЄ БРОНЮВАННЯ</div>
+        <div class="logo-glitch">TERMINATOR</div>
+        <p style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 2px; text-transform: uppercase;">Real-Life GPS Operation</p>
+    </header>
+
+    <div class="benefits-card">
+        <div class="benefit-row">
+            <span>Ціна після релізу (1 гра):</span>
+            <span class="old-price">~85 грн ($2)</span>
+        </div>
+        <div class="benefit-row">
+            <span>Ціна за гру в пакеті STARTER:</span>
+            <span class="new-price">~10 грн / сесія</span>
+        </div>
+        <p style="font-size: 0.75rem; margin-top: 10px; opacity: 0.8; line-height: 1.4;">
+            * Забронюйте доступ зараз та отримайте економію 85% і довічний статус учасника-засновника.
+        </p>
     </div>
-    <div class="header">
-        <div id="status">SYS: STANDBY</div>
-        <div id="logs" class="logs">> ЗАПУСТІТЬ ТЕРМІНАЛА</div>
+
+    <div class="stats-bar">
+        <span class="stat-label">ЗАЛИШИЛОСЬ МІСЦЬ FOUNDING MEMBERS:</span>
+        <span class="stat-value" id="sold-count">42 / 100</span>
+        <div class="progress-bg">
+            <div class="progress-fill" id="progress-line"></div>
+        </div>
     </div>
-    <div class="dist-panel">RANGE: <span id="dist-val">OFFLINE</span></div>
-    <div class="controls">
-        <button id="btn-init" class="btn" onclick="startVision()">Initialize Terminator OS</button>
-        <button id="btn-geo" class="btn btn-gps" onclick="requestTelegramGps()" style="display:none;">Activate Tactical GPS</button>
+
+    <div style="font-size: 0.7rem; color: var(--neon-blue); margin-bottom: 15px; letter-spacing: 2px;">SELECT_PROTOCOL:</div>
+
+    <div class="card">
+        <div class="tier-header">
+            <span class="tier-title">STARTER PACK</span>
+            <span class="tier-price">99 <small style="font-size: 10px;">UAH</small></span>
+        </div>
+        <ul class="feature-list">
+            <li>10 ігрових сесій (без терміну дії)</li>
+            <li>Тактичний радар локації</li>
+            <li>Haptic-відгук при наближенні</li>
+        </ul>
+        <button class="btn-act" onclick="buy('starter')">ACTIVATE</button>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready(); tg.expand();
-        let model = null;
-        let lastDetectionTime = 0;
-        const detectionInterval = 350; // Оптимізована швидкість
-        const video = document.getElementById('v');
-        const canvas = document.getElementById('c');
-        const ctx = canvas.getContext('2d');
+    <div class="card card-pro">
+        <div class="hot-badge">MOST POPULAR</div>
+        <div class="tier-header">
+            <span class="tier-title" style="color: var(--neon-red);">PRO ACCESS</span>
+            <span class="tier-price">299 <small style="font-size: 10px;">UAH</small></span>
+        </div>
+        <ul class="feature-list">
+            <li>6 місяців безлімітної гри</li>
+            <li>Статус Founding Member (Bronze)</li>
+            <li>Необмежені відродження (Respawn)</li>
+            <li>Ранній доступ до бета-тестів</li>
+        </ul>
+        <button class="btn-act btn-pro" onclick="buy('pro')">ACTIVATE PRO</button>
+    </div>
 
-        async function startVision() {
-            document.getElementById('status').innerText = 'LOADING AI...';
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
-                video.srcObject = stream;
-                video.onloadedmetadata = () => { video.play(); };
-                model = await cocoSsd.load();
-                document.getElementById('status').innerText = 'AI: ACTIVE';
-                document.getElementById('logs').innerText = '> SCANNING SECTOR...';
-                document.getElementById('btn-init').style.display = 'none';
-                document.getElementById('btn-geo').style.display = 'block';
-                detectFrame();
-            } catch (err) { alert("Access denied: " + err.message); }
-        }
+    <div class="card" style="border-color: #555;">
+        <div class="tier-header">
+            <span class="tier-title">STREAMER LINK</span>
+            <span class="tier-price">999 <small style="font-size: 10px;">UAH</small></span>
+        </div>
+        <ul class="feature-list">
+            <li>12 місяців повного безліміту</li>
+            <li>40% yield від донатів глядачів</li>
+            <li>Інтерфейс керування (God Mode)</li>
+            <li>Доступ до VIP-чату розробників</li>
+        </ul>
+        <button class="btn-act" onclick="buy('streamer')">ACTIVATE LINK</button>
+    </div>
 
-        // ВИПРАВЛЕНИЙ МЕТОД ЗАПИТУ GPS ЧЕРЕЗ TELEGRAM
-        function requestTelegramGps() {
-            document.getElementById('logs').innerText = '> ПРЕРЕВІРКА ДОСТУПУ GPS...';
-            
-            // Викликаємо Telegram Location Manager
-            tg.LocationManager.init((data) => {
-                if (data.locationAvailable) {
-                    tg.LocationManager.getLocation((loc) => {
-                        updateDistance(loc.latitude, loc.longitude);
-                        document.getElementById('logs').innerText = '> GPS LOCKED';
-                        tg.HapticFeedback.impactOccurred('medium');
-                    });
-                } else {
-                    alert("Увімкніть GPS у налаштуваннях Telegram або пристрою!");
-                }
-            });
-        }
+    <footer>
+        ENCRYPTION: AES-256 ACTIVE<br>
+        v1.0.4 | REGION: UKRAINE<br>
+        © 2026 CYBER_CORE_UA
+    </footer>
+</div>
 
-        function updateDistance(lat, lon) {
-            const kyiv = {lat: 50.45, lon: 30.52};
-            const d = Math.sqrt(Math.pow(lat - kyiv.lat, 2) + Math.pow(lon - kyiv.lon, 2)) * 111320;
-            document.getElementById('dist-val').innerText = Math.round(d) + " M";
-        }
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.headerColor = '#050506';
 
-        async function detectFrame() {
-            if (!model) return;
-            const now = Date.now();
-            if (now - lastDetectionTime > detectionInterval) {
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                const predictions = await model.detect(video, { maxNumBoxes: 3, minConfidence: 0.4 });
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                predictions.forEach(p => {
-                    ctx.strokeStyle = '#f00'; ctx.lineWidth = 4;
-                    ctx.strokeRect(p.bbox[0], p.bbox[1], p.bbox[2], p.bbox[3]);
-                    ctx.fillStyle = '#f00'; ctx.font = 'bold 18px Courier New';
-                    ctx.fillText('TARGET: ' + p.class.toUpperCase(), p.bbox[0], p.bbox[1] - 5);
-                });
-                lastDetectionTime = now;
-            }
-            requestAnimationFrame(detectFrame);
+    async function updateStats() {
+        try {
+            const response = await fetch('/api/stats');
+            const data = await response.json();
+            const sold = data.sold || 42;
+            document.getElementById('sold-count').innerText = `${sold} / 100`;
+            document.getElementById('progress-line').style.width = `${sold}%`;
+        } catch (e) { console.log("Demo stats loaded"); }
+    }
+
+    function buy(tier) {
+        if (tg.sendData) {
+            tg.sendData("buy_tier_" + tier);
+        } else {
+            alert("ВІДКРИЙТЕ В TELEGRAM ДЛЯ ОПЛАТИ");
         }
-    </script>
+    }
+    updateStats();
+</script>
 </body>
 </html>
