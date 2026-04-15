@@ -83,6 +83,8 @@
         .card-pro { border: 1px solid var(--neon-red); }
 
         .price-tag { font-size: 1.8rem; font-weight: bold; color: #fff; }
+        .old-price { display: block; font-size: 0.65rem; text-decoration: line-through; color: var(--neon-red); opacity: 0.7; font-weight: bold; }
+        
         .feature-list { list-style: none; padding: 0; font-size: 0.85rem; margin: 15px 0; opacity: 0.9; font-family: sans-serif; }
         .feature-list li { margin-bottom: 6px; }
         .feature-list li::before { content: "• "; color: var(--neon-blue); }
@@ -104,7 +106,6 @@
             border: 1px solid var(--neon-blue); padding: 10px 20px;
             display: inline-block; transition: 0.3s;
         }
-        .support-link:hover { background: rgba(0, 242, 255, 0.1); }
 
         footer { text-align: center; padding: 20px 0 40px; font-size: 8px; opacity: 0.4; letter-spacing: 1px; }
     </style>
@@ -127,13 +128,16 @@
     <header>
         <div class="ua-badge">ОБМЕЖЕНИЙ ДОСТУП</div>
         <div class="logo-glitch">TERMINATOR</div>
-        <p style="font-size: 0.6rem; opacity: 0.6; letter-spacing: 2px; margin-top: 5px;">TACTICAL GPS INTERFACE v1.0.9</p>
+        <p style="font-size: 0.6rem; opacity: 0.6; letter-spacing: 2px; margin-top: 5px;">TACTICAL GPS INTERFACE v1.1.0</p>
     </header>
 
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.7rem; color: #888;">STARTER PACK</span>
-            <span class="price-tag">99 UAH</span>
+            <div style="text-align: right;">
+                <span class="old-price">250 UAH</span>
+                <span class="price-tag">99 UAH</span>
+            </div>
         </div>
         <ul class="feature-list">
             <li>10 ігрових сесій</li>
@@ -144,15 +148,18 @@
     </div>
 
     <div class="card card-pro">
-        <div style="position: absolute; top: 10px; right: 10px; background: var(--neon-red); font-size: 8px; padding: 2px 6px;">TOP CHOICE</div>
+        <div style="position: absolute; top: 10px; right: 10px; background: var(--neon-red); font-size: 8px; padding: 2px 6px;">FOUNDING MEMBER PRICE</div>
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.7rem; color: var(--neon-red);">PRO ACCESS</span>
-            <span class="price-tag">299 UAH</span>
+            <div style="text-align: right;">
+                <span class="old-price" style="color: #fff; opacity: 0.5;">800 UAH</span>
+                <span class="price-tag">299 UAH</span>
+            </div>
         </div>
         <ul class="feature-list">
             <li>6 місяців безлімітної гри</li>
-            <li>Founding Member Status (Bronze)</li>
-            <li>Пріоритетна підтримка</li>
+            <li>Статус Founding Member (Bronze)</li>
+            <li>Пріоритетна підтримка штабу</li>
         </ul>
         <button class="btn-act btn-pro" onclick="buy('pro')">ЗАБРОНЮВАТИ PRO</button>
     </div>
@@ -160,7 +167,10 @@
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <span style="font-size: 0.7rem; color: #888;">STREAMER LINK</span>
-            <span class="price-tag">999 UAH</span>
+            <div style="text-align: right;">
+                <span class="old-price">2500 UAH</span>
+                <span class="price-tag">999 UAH</span>
+            </div>
         </div>
         <ul class="feature-list">
             <li>12 місяців повного безліміту</li>
