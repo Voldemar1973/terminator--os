@@ -23,7 +23,7 @@
             overflow-x: hidden;
         }
 
-        /* SOUND CONTROL & HINT */
+        /* SOUND CONTROL */
         .sound-wrapper {
             position: fixed; top: 15px; right: 15px; z-index: 9999;
             display: flex; align-items: center; gap: 10px;
@@ -95,7 +95,6 @@
         .btn-act:active { transform: scale(0.97); background: #fff; color: #000; }
         .btn-pro { border-color: var(--neon-red); color: var(--neon-red); }
 
-        /* SUPPORT SECTION */
         .support-box {
             text-align: center; margin-top: 30px; padding: 20px;
             border-top: 1px double rgba(0, 242, 255, 0.2);
@@ -128,7 +127,7 @@
     <header>
         <div class="ua-badge">ОБМЕЖЕНИЙ ДОСТУП</div>
         <div class="logo-glitch">TERMINATOR</div>
-        <p style="font-size: 0.6rem; opacity: 0.6; letter-spacing: 2px; margin-top: 5px;">TACTICAL GPS INTERFACE v1.0.8</p>
+        <p style="font-size: 0.6rem; opacity: 0.6; letter-spacing: 2px; margin-top: 5px;">TACTICAL GPS INTERFACE v1.0.9</p>
     </header>
 
     <div class="card">
@@ -156,6 +155,19 @@
             <li>Пріоритетна підтримка</li>
         </ul>
         <button class="btn-act btn-pro" onclick="buy('pro')">ЗАБРОНЮВАТИ PRO</button>
+    </div>
+
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 0.7rem; color: #888;">STREAMER LINK</span>
+            <span class="price-tag">999 UAH</span>
+        </div>
+        <ul class="feature-list">
+            <li>12 місяців повного безліміту</li>
+            <li>40% yield від донатів глядачів</li>
+            <li>Інтерфейс керування (God Mode)</li>
+        </ul>
+        <button class="btn-act" onclick="buy('streamer')">ЗАБРОНЮВАТИ LINK</button>
     </div>
 
     <div class="support-box">
@@ -198,22 +210,21 @@
         }
     }
 
-    // Тригери першого кліку
     document.addEventListener('click', playMusic, { once: true });
     document.addEventListener('touchstart', playMusic, { once: true });
 
     function buy(tier) {
         tg.HapticFeedback.impactOccurred('medium');
-        // Замініть посилання на ваші WayForPay
         const links = {
             'starter': 'https://wayforpay.com/p/starter_link',
-            'pro': 'https://wayforpay.com/p/pro_link'
+            'pro': 'https://wayforpay.com/p/pro_link',
+            'streamer': 'https://wayforpay.com/p/streamer_link'
         };
         
-        if (links[tier].includes('wayforpay')) {
+        if (links[tier] && links[tier].includes('wayforpay')) {
             tg.openLink(links[tier]);
         } else {
-            tg.showAlert("СИСТЕМА ТИМЧАСОВО В ОФЛАЙНІ. СПРОБУЙТЕ ПІЗНІШЕ.");
+            tg.showAlert("ОБРАНО ПАКЕТ: " + tier.toUpperCase() + ". Система готує платіжний термінал...");
         }
     }
 </script>
