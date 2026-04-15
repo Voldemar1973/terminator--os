@@ -23,9 +23,23 @@
             overflow-x: hidden;
         }
 
-        /* Кнопка звуку */
-        #sound-control {
+        /* ПІДКАЗКА ТА КНОПКА ЗВУКУ */
+        .sound-wrapper {
             position: fixed; top: 15px; right: 15px; z-index: 9999;
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        #sound-hint {
+            font-size: 12px; color: var(--neon-red); font-weight: bold;
+            text-shadow: 0 0 5px black; animation: hintBounce 1s infinite;
+        }
+
+        @keyframes hintBounce {
+            0%, 100% { transform: translateX(0); }
+            50% { transform: translateX(-5px); }
+        }
+
+        #sound-control {
             background: var(--neon-red); border: 1px solid white; color: white;
             width: 45px; height: 45px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
@@ -33,10 +47,11 @@
             box-shadow: 0 0 15px var(--neon-red);
             animation: pulse 2s infinite;
         }
+
         @keyframes pulse {
-            0% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.1); opacity: 0.8; }
-            100% { transform: scale(1); opacity: 1; }
+            0% { transform: scale(1); box-shadow: 0 0 10px var(--neon-red); }
+            50% { transform: scale(1.1); box-shadow: 0 0 20px var(--neon-red); }
+            100% { transform: scale(1); box-shadow: 0 0 10px var(--neon-red); }
         }
 
         .hero-bg {
@@ -56,7 +71,6 @@
 
         header { text-align: center; padding: 30px 0 15px; }
 
-        /* GLITCH ЕФЕКТ ПОВЕРНЕНО */
         .logo-glitch {
             font-size: 2.2rem; font-weight: 900; letter-spacing: 5px;
             color: #fff; text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue);
@@ -110,7 +124,10 @@
 </head>
 <body>
 
-<div id="sound-control" onclick="toggleMusic()">🔊</div>
+<div class="sound-wrapper">
+    <span id="sound-hint">SOUND ON 👆</span>
+    <div id="sound-control" onclick="toggleMusic()">🔊</div>
+</div>
 
 <audio id="bg-music" loop preload="auto">
     <source src="theme.mp3" type="audio/mpeg">
@@ -146,11 +163,11 @@
             <span style="font-size: 1.8rem; font-weight: bold;">99 UAH</span>
         </div>
         <ul class="feature-list">
-            <li>10 ігрових сесій (без терміну дії)</li>
+            <li>10 ігрових сесій</li>
             <li>Тактичний радар локації</li>
             <li>Haptic-відгук при наближенні</li>
         </ul>
-        <button class="btn-act" onclick="buy('starter')">ACTIVATE</button>
+        <button class="btn-act" onclick="buy('starter')">ЗАБРОНЮВАТИ</button>
     </div>
 
     <div class="card card-pro">
@@ -164,7 +181,7 @@
             <li>Статус Founding Member (Bronze)</li>
             <li>Необмежені відродження (Respawn)</li>
         </ul>
-        <button class="btn-act btn-pro" onclick="buy('pro')">ACTIVATE PRO</button>
+        <button class="btn-act btn-pro" onclick="buy('pro')">ЗАБРОНЮВАТИ PRO</button>
     </div>
 
     <div class="card">
@@ -177,10 +194,10 @@
             <li>40% yield від донатів глядачів</li>
             <li>Інтерфейс керування (God Mode)</li>
         </ul>
-        <button class="btn-act" onclick="buy('streamer')">ACTIVATE LINK</button>
+        <button class="btn-act" onclick="buy('streamer')">ЗАБРОНЮВАТИ LINK</button>
     </div>
 
-    <footer>v1.0.7 | REGION: UKRAINE | © 2026 CYBER_CORE_UA</footer>
+    <footer>v1.0.8 | REGION: UKRAINE | © 2026 CYBER_CORE_UA</footer>
 </div>
 
 <script>
@@ -190,6 +207,7 @@
 
     const music = document.getElementById('bg-music');
     const soundBtn = document.getElementById('sound-control');
+    const soundHint = document.getElementById('sound-hint');
 
     const paymentLinks = {
         'starter': 'https://wayforpay.com/p/your_link_99',
@@ -202,8 +220,9 @@
         music.volume = 0.4;
         music.play().then(() => {
             soundBtn.style.animation = "none";
+            soundHint.style.display = "none"; // ПРИХОВУЄМО ПІДКАЗКУ
             soundBtn.innerText = "🔊";
-        }).catch(e => console.log("Waiting for user..."));
+        }).catch(e => console.log("Waiting..."));
     }
 
     function toggleMusic() {
@@ -215,7 +234,7 @@
         }
     }
 
-    // Тригери для автозапуску
+    // Тригери
     document.addEventListener('click', playMusic, { once: true });
     document.addEventListener('touchstart', playMusic, { once: true });
 
