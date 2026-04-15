@@ -28,14 +28,8 @@
             position: fixed; top: 15px; right: 15px; z-index: 9999;
             display: flex; align-items: center; gap: 10px;
         }
-        #sound-hint {
-            font-size: 10px; color: var(--neon-red); font-weight: bold;
-            animation: hintBounce 1s infinite; text-transform: uppercase;
-        }
-        @keyframes hintBounce {
-            0%, 100% { transform: translateX(0); }
-            50% { transform: translateX(-5px); }
-        }
+        #sound-hint { font-size: 10px; color: var(--neon-red); font-weight: bold; animation: hintBounce 1s infinite; text-transform: uppercase; }
+        @keyframes hintBounce { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-5px); } }
         #sound-control {
             background: var(--neon-red); border: 1px solid white; color: white;
             width: 42px; height: 42px; border-radius: 50%;
@@ -59,58 +53,27 @@
         .container { padding: 20px; max-width: 500px; margin: 0 auto; position: relative; }
 
         header { text-align: center; padding: 40px 0 20px; }
-        .logo-glitch {
-            font-size: 2rem; font-weight: 900; letter-spacing: 4px;
-            color: #fff; text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue);
-        }
-        .ua-badge {
-            background: var(--neon-red); font-size: 10px; padding: 4px 12px;
-            font-weight: bold; display: inline-block; margin-bottom: 10px;
-            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
-        }
+        .logo-glitch { font-size: 2rem; font-weight: 900; letter-spacing: 4px; color: #fff; text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue); }
+        .ua-badge { background: var(--neon-red); font-size: 10px; padding: 4px 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); }
 
-        .card {
-            background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1);
-            padding: 20px; margin-bottom: 20px; position: relative;
-            clip-path: polygon(0 0, 100% 0, 100% 92%, 92% 100%, 0 100%);
-            backdrop-filter: blur(10px);
-        }
+        .card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); padding: 20px; margin-bottom: 20px; position: relative; clip-path: polygon(0 0, 100% 0, 100% 92%, 92% 100%, 0 100%); backdrop-filter: blur(10px); }
         .card-pro { border: 1px solid var(--neon-red); }
 
-        /* ОНОВЛЕНІ ЦІНИ - БІЛЬШІ ТА ЧІТКІШІ */
         .price-container { text-align: right; }
         .old-price-label { font-size: 0.6rem; color: #888; display: block; margin-bottom: 2px; }
-        .old-price { 
-            display: block; 
-            font-size: 1rem; /* Збільшено з 0.6 */
-            text-decoration: line-through; 
-            color: var(--neon-red); 
-            font-weight: 900; 
-            opacity: 0.9;
-        }
-        .price-tag { font-size: 2rem; font-weight: 900; color: #fff; display: block; }
+        .old-price { display: block; font-size: 1rem; text-decoration: line-through; color: var(--neon-red); font-weight: 900; opacity: 0.9; }
+        .price-tag { font-size: 2.2rem; font-weight: 900; color: #fff; display: block; line-height: 1; }
 
         .feature-list { list-style: none; padding: 0; font-size: 0.9rem; margin: 15px 0; opacity: 0.9; font-family: sans-serif; }
         .feature-list li { margin-bottom: 8px; }
         .feature-list li::before { content: "• "; color: var(--neon-blue); }
 
-        .btn-act {
-            width: 100%; padding: 18px; background: transparent; border: 2px solid #fff;
-            color: #fff; font-family: 'Orbitron'; font-weight: 900; cursor: pointer;
-            transition: 0.2s; letter-spacing: 1px; font-size: 0.9rem;
-        }
+        .btn-act { width: 100%; padding: 18px; background: transparent; border: 2px solid #fff; color: #fff; font-family: 'Orbitron'; font-weight: 900; cursor: pointer; transition: 0.2s; letter-spacing: 1px; font-size: 0.9rem; }
         .btn-act:active { transform: scale(0.95); background: #fff; color: #000; }
         .btn-pro { border-color: var(--neon-red); color: var(--neon-red); }
 
-        .support-box {
-            text-align: center; margin-top: 30px; padding: 25px;
-            border: 1px dashed rgba(0, 242, 255, 0.3); border-radius: 10px;
-        }
-        .support-link {
-            color: var(--neon-blue); text-decoration: none; font-size: 0.8rem;
-            border: 1px solid var(--neon-blue); padding: 12px 25px;
-            display: inline-block; font-weight: bold;
-        }
+        .support-box { text-align: center; margin-top: 30px; padding: 25px; border: 1px dashed rgba(0, 242, 255, 0.3); border-radius: 10px; }
+        .support-link { color: var(--neon-blue); text-decoration: none; font-size: 0.8rem; border: 1px solid var(--neon-blue); padding: 12px 25px; display: inline-block; font-weight: bold; }
 
         footer { text-align: center; padding: 20px 0 40px; font-size: 9px; opacity: 0.5; letter-spacing: 1px; }
     </style>
@@ -122,10 +85,7 @@
     <div id="sound-control" onclick="toggleMusic()">🔊</div>
 </div>
 
-<audio id="bg-music" loop preload="auto">
-    <source src="theme.mp3" type="audio/mpeg">
-</audio>
-
+<audio id="bg-music" loop preload="auto"><source src="theme.mp3" type="audio/mpeg"></audio>
 <div class="hero-bg"></div>
 <div class="hud-overlay"></div>
 
@@ -133,7 +93,7 @@
     <header>
         <div class="ua-badge">ОБМЕЖЕНИЙ ДОСТУП</div>
         <div class="logo-glitch">TERMINATOR</div>
-        <p style="font-size: 0.7rem; opacity: 0.8; letter-spacing: 2px; margin-top: 5px;">TACTICAL GPS INTERFACE v1.1.1</p>
+        <p style="font-size: 0.7rem; opacity: 0.8; letter-spacing: 2px; margin-top: 5px;">TACTICAL GPS INTERFACE v1.1.2</p>
     </header>
 
     <div class="card">
@@ -141,14 +101,14 @@
             <span style="font-size: 0.8rem; color: #bbb; font-weight: bold;">STARTER</span>
             <div class="price-container">
                 <span class="old-price-label">ПІСЛЯ РЕЛІЗУ:</span>
-                <span class="old-price">250 UAH</span>
+                <span class="old-price">850 UAH</span>
                 <span class="price-tag">99 UAH</span>
             </div>
         </div>
         <ul class="feature-list">
             <li>10 ігрових сесій</li>
             <li>Тактичний радар локації</li>
-            <li>Базовий доступ до системи</li>
+            <li>Вартість гри зараз: 9.90 грн</li>
         </ul>
         <button class="btn-act" onclick="buy('starter')">ЗАБРОНЮВАТИ ЗА 99</button>
     </div>
@@ -159,7 +119,7 @@
             <span style="font-size: 0.8rem; color: var(--neon-red); font-weight: bold;">PRO ACCESS</span>
             <div class="price-container">
                 <span class="old-price-label">ПІСЛЯ РЕЛІЗУ:</span>
-                <span class="old-price" style="color: #fff; opacity: 0.6;">800 UAH</span>
+                <span class="old-price" style="color: #fff; opacity: 0.6;">2500 UAH</span>
                 <span class="price-tag" style="color: var(--neon-red);">299 UAH</span>
             </div>
         </div>
@@ -172,53 +132,40 @@
     </div>
 
     <div class="card">
+        <div style="position: absolute; top: 10px; right: 10px; background: var(--neon-blue); color: #000; font-size: 8px; padding: 2px 6px; font-weight: 900;">BUSINESS LINK</div>
         <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-            <span style="font-size: 0.8rem; color: #bbb; font-weight: bold;">STREAMER</span>
+            <span style="font-size: 0.8rem; color: var(--neon-blue); font-weight: bold;">STREAMER</span>
             <div class="price-container">
                 <span class="old-price-label">ПІСЛЯ РЕЛІЗУ:</span>
-                <span class="old-price">2500 UAH</span>
+                <span class="old-price">5000 UAH</span>
                 <span class="price-tag">999 UAH</span>
             </div>
         </div>
         <ul class="feature-list">
             <li>12 місяців повного безліміту</li>
-            <li>40% yield від донатів глядачів</li>
-            <li>Інтерфейс керування (God Mode)</li>
+            <li><strong>Yield 40%</strong> від донатів чату</li>
+            <li>Унікальний IRL-контент для каналу</li>
+            <li>God Mode: Керування грою глядачами</li>
         </ul>
-        <button class="btn-act" onclick="buy('streamer')">ЗАБРОНЮВАТИ ЗА 999</button>
+        <button class="btn-act" style="border-color: var(--neon-blue); color: var(--neon-blue);" onclick="buy('streamer')">ЗАБРОНЮВАТИ ЗА 999</button>
     </div>
 
     <div class="support-box">
         <p style="font-size: 0.8rem; font-weight: bold; margin-bottom: 15px; letter-spacing: 1px;">ЗАПИТАННЯ ЩОДО ОПЕРАЦІЇ?</p>
-        <a href="https://t.me/Vovchyk0702" target="_blank" class="support-link">
-            ЗВ'ЯЗОК З АДМІНІСТРАТОРОМ
-        </a>
+        <a href="https://t.me/Vovchyk0702" target="_blank" class="support-link">ЗВ'ЯЗОК З АДМІНІСТРАТОРОМ</a>
     </div>
 
-    <footer>
-        DECRYPTED DATA: 2026 | UKRAINE | OPERATOR: @Vovchyk0702
-    </footer>
+    <footer>DECRYPTED DATA: 2026 | UKRAINE | OPERATOR: @Vovchyk0702</footer>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    tg.ready();
-    tg.expand();
-
+    tg.ready(); tg.expand();
     const music = document.getElementById('bg-music');
     const soundBtn = document.getElementById('sound-control');
 
-    function playMusic() {
-        music.muted = false;
-        music.volume = 0.4;
-        music.play().catch(e => console.log("Blocked"));
-        soundBtn.innerText = "🔊";
-    }
-
-    function toggleMusic() {
-        if (music.paused) { playMusic(); } else { music.pause(); soundBtn.innerText = "🔇"; }
-    }
-
+    function playMusic() { music.muted = false; music.volume = 0.4; music.play().catch(e => console.log("Blocked")); soundBtn.innerText = "🔊"; }
+    function toggleMusic() { if (music.paused) { playMusic(); } else { music.pause(); soundBtn.innerText = "🔇"; } }
     document.addEventListener('click', playMusic, { once: true });
 
     function buy(tier) {
@@ -228,11 +175,8 @@
             'pro': 'https://wayforpay.com/p/pro_link',
             'streamer': 'https://wayforpay.com/p/streamer_link'
         };
-        if (links[tier].includes('wayforpay')) {
-            tg.openLink(links[tier]);
-        } else {
-            tg.showAlert("СИСТЕМА: Обрано пакет " + tier.toUpperCase());
-        }
+        if (links[tier].includes('wayforpay')) { tg.openLink(links[tier]); } 
+        else { tg.showAlert("СИСТЕМА: Обрано пакет " + tier.toUpperCase()); }
     }
 </script>
 </body>
