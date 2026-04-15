@@ -23,66 +23,58 @@
             overflow-x: hidden;
         }
 
-        /* Кнопка звуку */
+        /* ЯСКРАВА КНОПКА ЗВУКУ */
         #sound-control {
             position: fixed;
             top: 20px;
             right: 20px;
-            z-index: 1000;
-            background: rgba(0,0,0,0.6);
-            border: 1px solid var(--neon-blue);
-            color: var(--neon-blue);
-            padding: 8px;
+            z-index: 9999;
+            background: var(--neon-red);
+            border: 2px solid white;
+            color: white;
+            width: 50px;
+            height: 50px;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
+            font-size: 24px;
             cursor: pointer;
-            box-shadow: 0 0 10px var(--neon-blue);
+            box-shadow: 0 0 20px var(--neon-red);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 10px var(--neon-red); }
+            50% { transform: scale(1.1); box-shadow: 0 0 25px var(--neon-red); }
+            100% { transform: scale(1); box-shadow: 0 0 10px var(--neon-red); }
         }
 
         .hero-bg {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100vh;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100vh;
             background-image: linear-gradient(to bottom, rgba(5, 5, 6, 0.5) 0%, var(--dark-bg) 95%), url('hero.jpg');
             background-size: cover; background-position: center top;
             z-index: -2; opacity: 0.8;
         }
 
-        .hud-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-image: linear-gradient(rgba(0, 242, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 242, 255, 0.1) 1px, transparent 1px);
-            background-size: 40px 40px; z-index: -1; pointer-events: none;
-        }
-
         .container { padding: 20px; max-width: 500px; margin: 0 auto; position: relative; }
-
         header { text-align: center; padding: 40px 0 20px; }
-        .logo-glitch { font-size: 2.2rem; font-weight: 900; letter-spacing: 5px; text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue); animation: glitch 3s infinite; }
-        @keyframes glitch { 0% { transform: skew(0deg); } 1% { transform: skew(3deg); } 2% { transform: skew(-3deg); } 3% { transform: skew(0deg); } }
-
-        .ua-badge { background: var(--neon-red); font-size: 10px; padding: 4px 12px; font-weight: bold; display: inline-block; margin-bottom: 10px; clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%); }
+        .logo-glitch { font-size: 2.2rem; font-weight: 900; letter-spacing: 5px; text-shadow: 2px 0 var(--neon-red), -2px 0 var(--neon-blue); }
 
         .card {
             background: var(--card-bg); border: 1px solid rgba(255,255,255,0.1); padding: 20px; margin-bottom: 20px;
-            clip-path: polygon(0 0, 100% 0, 100% 90%, 95% 100%, 0 100%); backdrop-filter: blur(8px);
+            clip-path: polygon(0 0, 100% 0, 100% 90%, 95% 100%, 0 100%);
         }
-        .card-pro { border: 1px solid var(--neon-red) !important; box-shadow: inset 0 0 15px rgba(255, 0, 60, 0.1); }
 
         .btn-act {
             width: 100%; padding: 16px; background: transparent; border: 1px solid #fff; color: #fff;
             font-family: 'Orbitron'; font-weight: bold; cursor: pointer; text-transform: uppercase;
         }
-        .btn-act:active { background: white; color: black; }
-        .btn-pro { border-color: var(--neon-red); color: var(--neon-red); }
-
+        
         footer { text-align: center; padding: 30px 0; font-size: 9px; opacity: 0.3; }
     </style>
 </head>
-<body onclick="initAudio()">
+<body onclick="forcePlay()">
 
 <div id="sound-control" onclick="toggleMusic()">🔊</div>
 
@@ -91,40 +83,22 @@
 </audio>
 
 <div class="hero-bg"></div>
-<div class="hud-overlay"></div>
 
 <div class="container">
     <header>
-        <div class="ua-badge">ПОПЕРЕДНЄ БРОНЮВАННЯ</div>
         <div class="logo-glitch">TERMINATOR</div>
-        <p style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 2px;">REAL-LIFE GPS OPERATION</p>
+        <p style="font-size: 0.7rem; opacity: 0.6; letter-spacing: 2px;">TACTICAL INTERFACE ACTIVE</p>
     </header>
 
     <div class="card">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <span style="font-size: 0.8rem; color: #888;">STARTER PACK</span>
+            <span style="font-size: 0.8rem;">STARTER PACK</span>
             <span style="font-size: 1.8rem; font-weight: bold;">99 UAH</span>
         </div>
         <button class="btn-act" onclick="buy('starter')">ACTIVATE</button>
     </div>
 
-    <div class="card card-pro">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <span style="font-size: 0.8rem; color: var(--neon-red);">PRO ACCESS</span>
-            <span style="font-size: 1.8rem; font-weight: bold;">299 UAH</span>
-        </div>
-        <button class="btn-act btn-pro" onclick="buy('pro')">ACTIVATE PRO</button>
-    </div>
-
-    <div class="card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <span style="font-size: 0.8rem; color: #888;">STREAMER LINK</span>
-            <span style="font-size: 1.8rem; font-weight: bold;">999 UAH</span>
-        </div>
-        <button class="btn-act" onclick="buy('streamer')">ACTIVATE LINK</button>
-    </div>
-
-    <footer>v1.0.5 | REGION: UKRAINE | © 2026 CYBER_CORE_UA</footer>
+    <footer>v1.0.6 | AUDIO_FORCE_ENABLED</footer>
 </div>
 
 <script>
@@ -134,44 +108,33 @@
 
     const music = document.getElementById('bg-music');
     const soundBtn = document.getElementById('sound-control');
-    let audioContext;
 
-    // Функція розблокування аудіо-системи
-    function initAudio() {
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioContext.state === 'suspended') {
-            audioContext.resume();
-        }
-        playMusic();
-    }
-
-    function playMusic() {
+    function forcePlay() {
         music.muted = false;
-        music.volume = 0.5;
         music.play().then(() => {
+            soundBtn.style.animation = "none";
             soundBtn.innerText = "🔊";
-        }).catch(e => console.log("Blocked"));
+        }).catch(e => console.log("Audio waiting..."));
     }
 
     function toggleMusic() {
         if (music.paused) {
-            playMusic();
+            music.play();
+            soundBtn.innerText = "🔊";
         } else {
             music.pause();
             soundBtn.innerText = "🔇";
         }
     }
 
-    // Тригери на будь-яку дію
-    document.addEventListener('touchstart', initAudio, { once: true });
-    document.addEventListener('click', initAudio, { once: true });
+    // Спроба запустити при будь-якому русі
+    window.addEventListener('scroll', forcePlay, { once: true });
+    document.addEventListener('touchstart', forcePlay, { once: true });
 
     function buy(tier) {
         tg.HapticFeedback.impactOccurred('heavy');
-        initAudio(); // Спроба звуку при купівлі
-        tg.showAlert("Протокол " + tier.toUpperCase() + " активовано! Переходимо до оплати.");
+        forcePlay();
+        tg.showAlert("ПРОТОКОЛ АКТИВОВАНО. ПЕРЕВІРТЕ ЗВУК.");
     }
 </script>
 </body>
